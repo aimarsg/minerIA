@@ -1,0 +1,12 @@
+# PASO 1
+calcular distancias entre todas las instancias
+    almacenamos en un hashmap <(A,B), distancia>
+
+# PASO 2
+coger la(s) distancia(s) mas pequeña y juntarla(s)
+    eliminar los elementos del hashmap que contengan las instancias juntadas
+    calcular distancias del nuevo grupo hasta el resto y meterlos en el hashmap
+
+# PASO 3
+
+repetir el paso 2 hasta llegar al umbral (distancia)
