@@ -10,3 +10,9 @@ coger la(s) distancia(s) mas pequeña y juntarla(s)
 # PASO 3
 
 repetir el paso 2 hasta llegar al umbral (distancia)
+
+
+- calcular distancias
+- main
+- coger las distancias mas pequeñas
+- eliminar las que haya que quitar
