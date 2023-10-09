@@ -12,7 +12,7 @@ coger la(s) distancia(s) mas pequeña y juntarla(s)
 repetir el paso 2 hasta llegar al umbral (distancia)
 
 
-- calcular distancias
+- calcular distancias (primero todas y luego solo las necesarias, parametro) (hugo)
 - main
-- coger las distancias mas pequeñas
-- eliminar las que haya que quitar
+- coger las distancias mas pequeñas (hay que juntarlas y tal ) (adrian)
+- eliminar las que haya que quitar (aimar)
