@@ -9,7 +9,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 
 # Leer el archivo CSV original
-csv_file = "./data/dataset_con_tweets.csv"
+csv_file = "data/dataset_con_tweets.csv"
 df = pd.read_csv(csv_file)
 
 
@@ -59,7 +59,7 @@ for index, row in df.iterrows():
 
 
 # Guardar el DataFrame modificado en un nuevo archivo CSV
-csv_file_con_tweets = "./data/dataset_con_tweets2.csv"
+csv_file_con_tweets = "data/dataset_con_tweets2.csv"
 df.to_csv(csv_file_con_tweets, index=False)
 
 print(f"Se ha creado el archivo '{csv_file_con_tweets}' con los tweets.")

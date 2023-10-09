@@ -2,7 +2,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 
 # Lee el archivo CSV
-df = pd.read_csv('./datos_train2.csv')
+df = pd.read_csv('data/datos_train2.csv')
 
 # Aplica la división de entrenamiento y prueba
 df_train, df_test = train_test_split(df, test_size=0.30, stratify=df['label'])
