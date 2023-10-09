@@ -2,13 +2,15 @@
 calcular distancias entre todas las instancias
     almacenamos en un hashmap <(A,B), distancia>
 
+        a y b van a ser hashmaps que tengan una lista de las intancias
+
 # PASO 2
-coger la(s) distancia(s) mas pequeña y juntarla(s)
-    eliminar los elementos del hashmap que contengan las instancias juntadas
-    calcular distancias del nuevo grupo hasta el resto y meterlos en el hashmap
+coger la(s) distancia(s) mas pequeña y juntarla(s), por ejemplo A,B
+    eliminar del hashmap las que tengan B
+    metemos en la lista de A las instancias de B
+    recalculamos las distancias de los elementos del hashmap que contengan de A (con las nuevas instancias)
 
 # PASO 3
-
 repetir el paso 2 hasta llegar al umbral (distancia)
 
 
