@@ -14,6 +14,7 @@ def calcular_distancia_average(cluster1, cluster2):
 
     return total_distancia / (len(cluster1) * len(cluster2)
 
+                              
 def calcular_distancias_clusters(instancias, clusters, distancias):
     # Calcular las distancias entre todos los clusters
     for i, cluster1 in clusters.items():
