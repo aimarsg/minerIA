@@ -1,3 +1,4 @@
+import copy
 import csv
 import sys
 import pandas as pd
@@ -6,8 +7,8 @@ from sklearn.decomposition import PCA
 import math
 import matplotlib.pyplot as plt
 
-ClustersList = {}
-distancias = {}
+distancia_entre_instancias = {}
+distancia_entre_clusters = {}
 
 def leer_datos():
     input_file = sys.argv[1]
@@ -23,22 +24,28 @@ def reducir_dimensionalidad_pca(data):
 
     return df_reducido
 
-def cluster_cercano(clusters):
+def inicializar_distancias(clusters):
+    global distancia_entre_clusters
+    global distancia_entre_instancias
     distancia_minima = float('inf')
     clusters_cercanos = (None, None)
 
-    for i in range(len(clusters)):
-        for j in range(i + 1, len(clusters)):
-            for punto1 in clusters[i]:
-                for punto2 in clusters[j]:
-                    distancia = euclidean_distance(punto1, punto2)
-                    if distancia < distancia_minima:
-                        distancia_minima = distancia
-                        clusters_cercanos = (i, j)
+    for cluster1 in range(len(clusters)):
+        for cluster2 in range(cluster1 + 1, len(clusters)):
+            instancia1 = clusters[cluster1]
+            instancia2 = clusters[cluster2]
+            distancia = euclidean_distance(instancia1, instancia2)
+            distancia_entre_instancias[(cluster1, cluster2)]=distancia
+            if distancia < distancia_minima:
+                distancia_minima = distancia
+                clusters_cercanos = (cluster1, cluster2)
 
+    distancia_entre_clusters = copy.deepcopy(distancia_entre_instancias)
     return clusters_cercanos
 
 def fusionar_clusters(clusters, clusters_cercanos):
+    print("fusionando clusters...")
+    print(clusters_cercanos)
     nuevo_cluster_data = clusters[clusters_cercanos[0]] + clusters[clusters_cercanos[1]]
     clusters.pop(clusters_cercanos[0])
     clusters.pop(clusters_cercanos[1] - 1)
@@ -47,17 +54,60 @@ def fusionar_clusters(clusters, clusters_cercanos):
 def euclidean_distance(point1, point2):
     return math.sqrt(sum((x - y) ** 2 for x, y in zip(point1, point2)))
 
+def calcular_distancia_entre_clusters(cluster1, cluster2):
+    global distancia_entre_instancias
+    global distancia_entre_clusters
+
+    distancia_minima = float('inf')
+    dist = 0
+    for instancia1 in cluster1:
+        for instancia2 in cluster2:
+            if (instancia1, instancia2) in distancia_entre_instancias:
+                dist = distancia_entre_instancias[(instancia1, instancia2)]
+            elif (instancia2, instancia1) in distancia_entre_instancias:
+                dist = distancia_entre_instancias[(instancia2, instancia1)]
+            else:
+                print("Error catastofico")
+            if dist<distancia_minima:
+                distancia_minima = dist
+
+    return distancia_minima
+
 def actualizar_distancias(clusters, clusters_cercanos):
+    global distancia_entre_clusters
+
+    print("actualizando distancias")
+    print("eliminar"+str(clusters_cercanos))
+
     i, j = clusters_cercanos
 
+    # suponiendo que i y j se fusionan en i
+    if (i,j) in distancia_entre_clusters:
+        distancia_entre_clusters.pop((i, j))
+    elif (j,i) in distancia_entre_clusters:
+        distancia_entre_clusters.pop((j,i))
+    else:
+        print("algo pasa")
+
+    # actualizar todas las distancias respecto al cluster i
+
+    for tupla, distancia in distancia_entre_clusters.items():
+        cluster1, cluster2 = tupla
+        if cluster1==i or cluster2==i:
+            distancia = calcular_distancia_entre_clusters(cluster1, cluster2)
+            distancia_entre_clusters[tupla]=distancia
+        if cluster1==j or cluster2==j:
+            distancia_entre_clusters.pop(tupla)
+
+    '''
     # Calcular la distancia mínima entre el nuevo cluster y los clusters restantes
     distancias_actualizadas = []
 
     for k in range(len(clusters)):
         if k != i and k != j:
             distancia_minima = min(
-                distancias[(i, k)] if (i, k) in distancias else float('inf'),
-                distancias[(j, k)] if (j, k) in distancias else float('inf')
+                distancia_entre_clusters[(i, k)] if (i, k) in distancia_entre_clusters else float('inf'),
+                distancia_entre_clusters[(j, k)] if (j, k) in distancia_entre_clusters else float('inf')
             )
 
             distancias_actualizadas.append(((i, k), distancia_minima))
@@ -73,26 +123,26 @@ def actualizar_distancias(clusters, clusters_cercanos):
     # Actualizar las distancias con las nuevas distancias mínimas
     for distancia, valor in distancias_actualizadas:
         distancias[distancia] = valor
+    '''
 
 
 def cluster_jerarquico(data, umbral):
-    clusters = [[p] for p in data]
-    distancias_historia = []
+    global distancia_entre_clusters
+
+    clusters = [tuple(p) for p in data]
+    clusters_cercanos = inicializar_distancias(clusters)
+    print(distancia_entre_clusters[(0,1)])
 
     while len(clusters) > 1:
-        clusters_cercanos = cluster_cercano(clusters)
-        distancia_minima = euclidean_distance(
-            clusters[clusters_cercanos[0]][0], clusters[clusters_cercanos[1]][0]
-        )
+        fusionar_clusters(clusters, clusters_cercanos)
+        actualizar_distancias(clusters, clusters_cercanos)
+
+        clusters_cercanos, distancia_minima = min(distancia_entre_clusters.items(), key=lambda x: x[1])
 
         if distancia_minima > umbral:
             break
 
-        distancias_historia.append((clusters_cercanos, distancia_minima))
-        fusionar_clusters(clusters, clusters_cercanos)
-        actualizar_distancias(clusters, clusters_cercanos)
-
-    return clusters, distancias_historia
+    return clusters
 
 def calcular_distancia(instancia1, instancia2):
     # Calcula la distancia de Manhattan entre dos instancias
