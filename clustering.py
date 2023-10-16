@@ -25,12 +25,14 @@ def leer_datos():
     df = pd.read_csv(input_file)
     df = df.drop('User', axis=1)
     df = df.drop('Label', axis=1)
+
+    df = df.head(10)
     return df.values.tolist()
 
 
 def reducir_dimensionalidad_pca(data):
     # Realizar PCA para reducir la dimensionalidad a 500
-    pca = PCA(n_components=500)
+    pca = PCA(n_components=10)
     df_reducido = pca.fit_transform(data)
 
     return df_reducido
@@ -39,15 +41,14 @@ def reducir_dimensionalidad_pca(data):
 def inicializar_distancias(clusters):
     global distancia_entre_clusters
     global distancia_entre_instancias
-    global lista_clusters
 
     distancia_minima = float('inf')
     clusters_cercanos = (None, None)
 
     for cluster1 in range(len(clusters)):
         for cluster2 in range(cluster1 + 1, len(clusters)):
-            instancia1 = clusters[cluster1]
-            instancia2 = clusters[cluster2]
+            instancia1 = idx_instancias[cluster1]
+            instancia2 = idx_instancias[cluster2]
             distancia = euclidean_distance(instancia1, instancia2)
             distancia_entre_instancias[(cluster1, cluster2)] = distancia
             if distancia < distancia_minima:
@@ -70,6 +71,8 @@ def fusionar_clusters(clusters_cercanos):
 
 
 def euclidean_distance(point1, point2):
+    print(point1)
+    print(point2)
     return np.sqrt(np.sum((np.array(point1) - np.array(point2)) ** 2))
 
 
@@ -83,10 +86,8 @@ def calcular_distancia_entre_clusters(idxcluster1, idxcluster2):
 
     distancia_minima = float('inf')
     dist = 0
-    for instancia1 in cluster1:
-        for instancia2 in cluster2:
-            idxinstancia1 = obtenerIdxInstancia(instancia1)
-            idxinstancia2 = obtenerIdxInstancia(instancia2)
+    for idxinstancia1 in cluster1:
+        for idxinstancia2 in cluster2:
             tupla1 = (idxinstancia1, idxinstancia2)
             tupla2 = (idxinstancia2, idxinstancia1)
             if tupla1 in distancia_entre_instancias.keys():
@@ -135,14 +136,6 @@ def actualizar_distancias(clusters_cercanos):
             else:
                 print("error2")
 
-    """for tupla, distancia in distancia_entre_clusters.items():
-        cluster1, cluster2 = tupla
-        if cluster1 == j or cluster2 == j:
-            nueva_distancia_entre_clusters.pop(tupla)
-        elif cluster1 == i or cluster2 == i:
-            distancia = calcular_distancia_entre_clusters(cluster1, cluster2)
-            nueva_distancia_entre_clusters[tupla] = distancia"""
-
     distancia_entre_clusters = nueva_distancia_entre_clusters
 
 
@@ -155,13 +148,13 @@ def cluster_jerarquico(data, umbral):
     j = 0
     for p in data:
         idx_instancias[j] = p
-        lista_clusters[j] = [p]
+        lista_clusters[j] = [j]
         j += 1
 
     clusters_cercanos = inicializar_distancias(lista_clusters)
 
     i = 1
-    while len(lista_clusters) > 1:
+    while len(lista_clusters) > 2 and i <3:
 
         print("-------------------ITERACION " + str(i) + "-------------------------")
 
@@ -185,7 +178,7 @@ if __name__ == "__main__":
         datos = leer_datos()
         clusters_dimensionados = reducir_dimensionalidad_pca(datos)
         print("Dimensionalidad reducida con PCA:", clusters_dimensionados.shape)
-        umbral_clusters = 20  # Ajusta este valor según tus necesidades
+        umbral_clusters = 120  # Ajusta este valor según tus necesidades
 
         # Obtener clusters jerárquicos
         clusters = cluster_jerarquico(clusters_dimensionados, umbral_clusters)
