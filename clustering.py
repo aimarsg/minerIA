@@ -161,6 +161,8 @@ def cluster_jerarquico(data, umbral):
         fusionar_clusters(clusters_cercanos)
         actualizar_distancias(clusters_cercanos)
 
+        diccionario_ordenado = {k: v for k, v in sorted(distancia_entre_instancias.items())}
+
         clusters_cercanos, distancia_minima = min(distancia_entre_clusters.items(), key=lambda x: x[1])
 
         if distancia_minima > umbral:
