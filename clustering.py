@@ -3,10 +3,11 @@ import csv
 import sys
 import pandas as pd
 import numpy as np
+from scipy.cluster.hierarchy import dendrogram
 from sklearn.decomposition import PCA
 import math
 import matplotlib.pyplot as plt
-from scipy.cluster.hierarchy import dendrogram
+from sklearn.metrics import silhouette_score
 
 # VARIABLES GLOBALES #
 distancia_entre_instancias = {}
@@ -19,15 +20,22 @@ def leer_datos():
     df = pd.read_csv(input_file, sep=",")
     df = df.drop('User', axis=1)
     df = df.drop('Label', axis=1)
-    df = df.head(50)
+    #df = df.head(50)
+    with open(sys.argv[2], 'w') as archivo:
+        archivo.write(f"numero de instancias: {len(df.index)} \n")
     return df.values.tolist()
 
 
 def reducir_dimensionalidad_pca(data):
     # Realizar PCA para reducir la dimensionalidad a 500
-    pca = PCA(n_components=2)
+    pca = PCA(n_components=100)
     df_reducido = pca.fit_transform(data)
 
+    with open(sys.argv[2], 'a') as archivo:
+        i = 0
+        for linea in df_reducido:
+            archivo.write(f"{i}, {linea} \n")
+            i+=1
     return df_reducido
 
 
@@ -154,11 +162,37 @@ def actualizar_distancias(clusters_cercanos, id_nuevo_cluster):
 
     distancia_entre_clusters = nueva_distancia_entre_clusters
 
+def asignar_labels(num_instancias):
+    labels = np.arange(num_instancias)
+
+    lista = list(lista_clusters.keys())
+
+    while True and len(lista)>0:
+        elemento = lista.pop()
+        if elemento<num_instancias:
+            break
+        marcar_labels(lista_clusters[elemento], labels, elemento, lista)
+    unique_labels = np.unique(labels)
+    return labels, len(unique_labels)
+
+
+def marcar_labels(cluster, labels, label, lista):
+    for elemento in cluster:
+        idElemento = lista.index(elemento)
+        lista.pop(idElemento)
+        if not isinstance(lista_clusters[elemento][0], int): #es decir, no es un cluster
+            labels[elemento] = label
+        else:
+            marcar_labels(lista_clusters[elemento], labels, label, lista)
+
+
 
 def cluster_jerarquico(data, umbral):
     global distancia_entre_clusters
     global distancia_entre_instancias
     global lista_clusters
+
+    lista_clusters.keys()
 
     j = 0
     for p in data:
@@ -169,22 +203,34 @@ def cluster_jerarquico(data, umbral):
     i = 1
 
     Z = []  # Matriz de enlace
+    silhouette_scores = []
 
-    while j > i:
+    with open(sys.argv[2], 'a') as archivo:
 
-        print("-------------------ITERACION " + str(i) + "-------------------------")
+        while j > i:
 
-        clusters_cercanos, distancia_minima = min(distancia_entre_clusters.items(), key=lambda x: x[1])
+            print("-------------------ITERACION " + str(i) + "-------------------------")
 
-        id_cluster_nuevo = fusionar_clusters(clusters_cercanos)
-        actualizar_distancias(clusters_cercanos, id_cluster_nuevo)
+            clusters_cercanos, distancia_minima = min(distancia_entre_clusters.items(), key=lambda x: x[1])
 
-        Z.append([clusters_cercanos[0], clusters_cercanos[1], distancia_minima, len(lista_clusters[id_cluster_nuevo])])
+            id_cluster_nuevo = fusionar_clusters(clusters_cercanos)
+            actualizar_distancias(clusters_cercanos, id_cluster_nuevo)
 
-        if distancia_minima > umbral:
-            break
+            archivo.write(f"iteración: {i}, distancia: {distancia_minima}, clusters fusionados: {id_cluster_nuevo}:{lista_clusters[id_cluster_nuevo]}, ")
 
-        i += 1
+            labels, unique = asignar_labels(num_instancias=j)
+            # Calcular Silhouette para cada iteración
+            if unique>1:
+                silhouette = silhouette_score(data, labels)
+                silhouette_scores.append(silhouette)
+                archivo.write(f"Silhouette Score: {silhouette}\n")
+
+            Z.append([clusters_cercanos[0], clusters_cercanos[1], distancia_minima, len(lista_clusters[id_cluster_nuevo])])
+
+            if distancia_minima > umbral:
+                break
+
+            i += 1
 
     return lista_clusters, np.array(Z)
 
@@ -206,6 +252,8 @@ if __name__ == "__main__":
         # Obtener clusters jerárquicos
         clusters, Z = cluster_jerarquico(datos, umbral_clusters)
 
+        print(clusters)
+
         # Mostrar dendrograma
         dendrogram(Z)
-        plt.show()
+        plt.savefig("dendograma", dpi = 450)
