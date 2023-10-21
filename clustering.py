@@ -34,7 +34,7 @@ def reducir_dimensionalidad_pca(data):
     with open(sys.argv[2], 'a') as archivo:
         i = 0
         for linea in df_reducido:
-            archivo.write(f"{i}, {linea} \n")
+            archivo.write(f"{i}, {[linea]} \n")
             i+=1
     return df_reducido
 
@@ -256,4 +256,5 @@ if __name__ == "__main__":
 
         # Mostrar dendrograma
         dendrogram(Z)
+        plt.show()
         plt.savefig("dendograma", dpi = 450)
