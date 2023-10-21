@@ -6,6 +6,7 @@ import numpy as np
 from sklearn.decomposition import PCA
 import math
 import matplotlib.pyplot as plt
+from scipy.cluster.hierarchy import dendrogram
 
 # VARIABLES GLOBALES #
 distancia_entre_instancias = {}
@@ -15,17 +16,16 @@ lista_clusters = {}
 
 def leer_datos():
     input_file = sys.argv[1]
-    df = pd.read_csv(input_file, sep="\t")
-    # df = df.drop('User', axis=1)
-    # df = df.drop('Label', axis=1)
-    # df = df.head(5)
-    print(df.head(5))
+    df = pd.read_csv(input_file, sep=",")
+    df = df.drop('User', axis=1)
+    df = df.drop('Label', axis=1)
+    df = df.head(50)
     return df.values.tolist()
 
 
 def reducir_dimensionalidad_pca(data):
     # Realizar PCA para reducir la dimensionalidad a 500
-    pca = PCA(n_components=5)
+    pca = PCA(n_components=2)
     df_reducido = pca.fit_transform(data)
 
     return df_reducido
@@ -36,7 +36,6 @@ def inicializar_distancias(clusters):
     global distancia_entre_instancias
 
     distancia_minima = float('inf')
-    #clusters_cercanos = (None, None)
 
     for cluster1 in range(len(clusters)):
         for cluster2 in range(cluster1 + 1, len(clusters)):
@@ -46,10 +45,8 @@ def inicializar_distancias(clusters):
             distancia_entre_instancias[(cluster1, cluster2)] = distancia
             if distancia < distancia_minima:
                 distancia_minima = distancia
-                #clusters_cercanos = (cluster1, cluster2)
 
     distancia_entre_clusters = copy.copy(distancia_entre_instancias)
-    #return clusters_cercanos
 
 
 def fusionar_clusters(clusters_cercanos):
@@ -108,18 +105,6 @@ def calcular_distancia_entre_clusters(idxcluster1, idxcluster2):
                 dist = distancia_entre_instancias[tupla2]
 
             else:
-
-                """
-                arg1 = idxcluster1
-                arg2 = idxcluster2
-                # comprobar si son clusters, si es asi calcular con las instancias de esos clusters
-                if isinstance(lista_clusters[idxinstancia1][0], int):
-                    arg1 = idxinstancia1
-                if isinstance(lista_clusters[idxinstancia2][0], int):
-                    arg2 = idxinstancia2
-                dist = calcular_distancia_entre_clusters(arg1,arg2)
-                """
-                ## PARA DEBUG , QUITAR DESPUES ##
                 print(f"Error : tupla1 {tupla1} \n clusters (d) {idxcluster1}: {cluster1} y {idxcluster2} :{cluster2} \n")
                 input("continuar...")
 
@@ -135,8 +120,6 @@ def actualizar_distancias(clusters_cercanos, id_nuevo_cluster):
     i, j = clusters_cercanos
     print(f"actualizando distancias...{[i, j]} \n nuevo cluster: {id_nuevo_cluster}")
 
-    # i y j se han fusionado en id_nuevo_cluster
-
     if (i, j) in distancia_entre_clusters:
         distancia_entre_clusters.pop((i, j))
     elif (j, i) in distancia_entre_clusters:
@@ -147,23 +130,15 @@ def actualizar_distancias(clusters_cercanos, id_nuevo_cluster):
     nueva_distancia_entre_clusters = copy.copy(distancia_entre_clusters)
 
     for cluster in lista_clusters.keys():
-        # eliminar y añadir
         if cluster != i and cluster != id_nuevo_cluster:
             if cluster != j:
 
                 if (i, cluster) in distancia_entre_clusters:
-                    if id_nuevo_cluster == 55:
-                        print(f"antes: {i}, {cluster}// ahora {id_nuevo_cluster}, {cluster}")
                     distancia = calcular_distancia_entre_clusters(id_nuevo_cluster, cluster)
                     nueva_distancia_entre_clusters[(id_nuevo_cluster, cluster)] = distancia
-                    if id_nuevo_cluster==55 and cluster==46:
-                        print("----------------------")
-                        print(nueva_distancia_entre_clusters[(id_nuevo_cluster, cluster)])
                     nueva_distancia_entre_clusters.pop((i, cluster))
 
                 elif (cluster, i) in distancia_entre_clusters:
-                    if id_nuevo_cluster == 55:
-                        print(f"antes: {cluster}, {i}// ahora {cluster}, {id_nuevo_cluster}")
                     distancia = calcular_distancia_entre_clusters(cluster, id_nuevo_cluster)
                     nueva_distancia_entre_clusters[(cluster, id_nuevo_cluster)] = distancia
 
@@ -193,25 +168,25 @@ def cluster_jerarquico(data, umbral):
     inicializar_distancias(lista_clusters)
     i = 1
 
-    with open(sys.argv[2], 'w') as archivo:
+    Z = []  # Matriz de enlace
 
-        while j > i:
+    while j > i:
 
-            print("-------------------ITERACION " + str(i) + "-------------------------")
+        print("-------------------ITERACION " + str(i) + "-------------------------")
 
-            clusters_cercanos, distancia_minima = min(distancia_entre_clusters.items(), key=lambda x: x[1])
+        clusters_cercanos, distancia_minima = min(distancia_entre_clusters.items(), key=lambda x: x[1])
 
-            id_cluster_nuevo = fusionar_clusters(clusters_cercanos)
-            actualizar_distancias(clusters_cercanos, id_cluster_nuevo)
+        id_cluster_nuevo = fusionar_clusters(clusters_cercanos)
+        actualizar_distancias(clusters_cercanos, id_cluster_nuevo)
 
-            archivo.write(f"iteración: {i}, distancia: {distancia_minima}, clusters fusionados:  {id_cluster_nuevo }:{lista_clusters[id_cluster_nuevo]}\n")
+        Z.append([clusters_cercanos[0], clusters_cercanos[1], distancia_minima, len(lista_clusters[id_cluster_nuevo])])
 
-            if distancia_minima > umbral:
-                break
-            #input("continuar ... ")
-            i += 1
+        if distancia_minima > umbral:
+            break
 
-    return lista_clusters
+        i += 1
+
+    return lista_clusters, np.array(Z)
 
 
 if __name__ == "__main__":
@@ -226,9 +201,11 @@ if __name__ == "__main__":
             print("Dimensionalidad reducida con PCA:", datos.shape)
 
         print(f"Numero de instancias: {len(datos)}")
-        umbral_clusters = 120  # Ajusta este valor según tus necesidades
+        umbral_clusters = 10  # Ajusta este valor según tus necesidades
 
         # Obtener clusters jerárquicos
-        clusters = cluster_jerarquico(datos, umbral_clusters)
-        print(clusters)
-        print(len(clusters))
+        clusters, Z = cluster_jerarquico(datos, umbral_clusters)
+
+        # Mostrar dendrograma
+        dendrogram(Z)
+        plt.show()
