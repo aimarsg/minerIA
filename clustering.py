@@ -34,7 +34,9 @@ def reducir_dimensionalidad_pca(data):
     with open(sys.argv[2], 'a') as archivo:
         i = 0
         for linea in df_reducido:
-            archivo.write(f"{i}, {[linea]} \n")
+            linea_str = np.array2string(linea, precision=8, separator=',', suppress_small=True)
+            linea_str = linea_str.replace('\n', '')
+            archivo.write(f"{i}, {linea_str} \n")
             i+=1
     return df_reducido
 
