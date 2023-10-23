@@ -1,3 +1,44 @@
+#FALTA
+
+OPCIONAL:
+
+hacer pca despues del clustering
+visualizacion
+
+OBLIGATORIO:
+
+comprobar las instancias que son raras (para la documentancion) --HUGO
+exploracion de los datos -- ADRIAN
+  diferente distancia minkowski, o distintas distancias -- AIMAR
+
+experimentar
+    probar numero de cluster -- HUGO
+    probar diferentes dimensiones con un mismo numero de cluster --ADRIAN
+
+indice de calidad externo-> class to cluster (el interno ya esta hecho) -- AIMAR
+en la asignacion nueva , enseñar dos originales-- HUGO
+compararlo con el de librerias ya implementadas --HUGO
+    el mismo conjunto y pasarlo a otro, comparar el cllass to cluster, el silouete, teimpo o memoria tal
+
+comentar el codigo  -- AIMAR
+hacer un readme  -- AIMAR
+
+en la asignacion  --> ADRIAN
+probar con :
+    instancia entrenada
+    instancia nueva
+    instancia que no tiene nada que ver
+
+
+
+para incluir en la documentacion:
+    los cambios que hicimos para lo del arbol
+    lo del bow -> vectores
+
+
+
+
+--------------------------------------------------
 # PASO 1
 calcular distancias entre todas las instancias
     almacenamos en un hashmap <(A,B), distancia>
@@ -18,3 +59,4 @@ repetir el paso 2 hasta llegar al umbral (distancia)
 - main
 - coger las distancias mas pequeñas (hay que juntarlas y tal ) (adrian)
 - eliminar las que haya que quitar (aimar)
+
