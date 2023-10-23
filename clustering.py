@@ -1,5 +1,6 @@
 import copy
 import csv
+import pickle
 import sys
 import pandas as pd
 import numpy as np
@@ -20,7 +21,7 @@ def leer_datos():
     df = pd.read_csv(input_file, sep=",")
     df = df.drop('User', axis=1)
     df = df.drop('Label', axis=1)
-    #df = df.head(50)
+    # df = df.head(50)
     with open(sys.argv[2], 'w') as archivo:
         archivo.write(f"numero de instancias: {len(df.index)} \n")
     return df.values.tolist()
@@ -30,14 +31,6 @@ def reducir_dimensionalidad_pca(data):
     # Realizar PCA para reducir la dimensionalidad a 500
     pca = PCA(n_components=100)
     df_reducido = pca.fit_transform(data)
-
-    with open(sys.argv[2], 'a') as archivo:
-        i = 0
-        for linea in df_reducido:
-            linea_str = np.array2string(linea, precision=8, separator=',', suppress_small=True)
-            linea_str = linea_str.replace('\n', '')
-            archivo.write(f"{i}, {linea_str} \n")
-            i+=1
     return df_reducido
 
 
@@ -95,7 +88,7 @@ def calcular_distancia_entre_clusters(idxcluster1, idxcluster2):
             tupla1 = (idxinstancia1, idxinstancia2)
             tupla2 = (idxinstancia2, idxinstancia1)
 
-            if   (idxcluster1, idxinstancia2) in distancia_entre_clusters.keys():
+            if (idxcluster1, idxinstancia2) in distancia_entre_clusters.keys():
                 dist = distancia_entre_clusters[(idxcluster1, idxinstancia2)]
             elif (idxinstancia2, idxcluster1) in distancia_entre_clusters.keys():
                 dist = distancia_entre_clusters[(idxinstancia2, idxcluster1)]
@@ -115,7 +108,8 @@ def calcular_distancia_entre_clusters(idxcluster1, idxcluster2):
                 dist = distancia_entre_instancias[tupla2]
 
             else:
-                print(f"Error : tupla1 {tupla1} \n clusters (d) {idxcluster1}: {cluster1} y {idxcluster2} :{cluster2} \n")
+                print(
+                    f"Error : tupla1 {tupla1} \n clusters (d) {idxcluster1}: {cluster1} y {idxcluster2} :{cluster2} \n")
                 input("continuar...")
 
             if dist < distancia_minima:
@@ -164,14 +158,15 @@ def actualizar_distancias(clusters_cercanos, id_nuevo_cluster):
 
     distancia_entre_clusters = nueva_distancia_entre_clusters
 
+
 def asignar_labels(num_instancias):
     labels = np.arange(num_instancias)
 
     lista = list(lista_clusters.keys())
 
-    while True and len(lista)>0:
+    while True and len(lista) > 0:
         elemento = lista.pop()
-        if elemento<num_instancias:
+        if elemento < num_instancias:
             break
         marcar_labels(lista_clusters[elemento], labels, elemento, lista)
     unique_labels = np.unique(labels)
@@ -182,11 +177,10 @@ def marcar_labels(cluster, labels, label, lista):
     for elemento in cluster:
         idElemento = lista.index(elemento)
         lista.pop(idElemento)
-        if not isinstance(lista_clusters[elemento][0], int): #es decir, no es un cluster
+        if not isinstance(lista_clusters[elemento][0], int):  # es decir, no es un cluster
             labels[elemento] = label
         else:
             marcar_labels(lista_clusters[elemento], labels, label, lista)
-
 
 
 def cluster_jerarquico(data, umbral):
@@ -200,6 +194,9 @@ def cluster_jerarquico(data, umbral):
     for p in data:
         lista_clusters[j] = [p]
         j += 1
+
+    with open('instancias.pickle', 'wb') as f:
+        pickle.dump(lista_clusters, f)
 
     inicializar_distancias(lista_clusters)
     i = 1
@@ -218,16 +215,18 @@ def cluster_jerarquico(data, umbral):
             id_cluster_nuevo = fusionar_clusters(clusters_cercanos)
             actualizar_distancias(clusters_cercanos, id_cluster_nuevo)
 
-            archivo.write(f"iteración: {i}, distancia: {distancia_minima}, clusters fusionados: {id_cluster_nuevo}:{lista_clusters[id_cluster_nuevo]}, ")
+            archivo.write(
+                f"iteración: {i}, distancia: {distancia_minima}, clusters fusionados: {id_cluster_nuevo}:{lista_clusters[id_cluster_nuevo]}, ")
 
             labels, unique = asignar_labels(num_instancias=j)
             # Calcular Silhouette para cada iteración
-            if unique>1:
+            if unique > 1:
                 silhouette = silhouette_score(data, labels)
                 silhouette_scores.append(silhouette)
                 archivo.write(f"Silhouette Score: {silhouette}\n")
 
-            Z.append([clusters_cercanos[0], clusters_cercanos[1], distancia_minima, len(lista_clusters[id_cluster_nuevo])])
+            Z.append(
+                [clusters_cercanos[0], clusters_cercanos[1], distancia_minima, len(lista_clusters[id_cluster_nuevo])])
 
             if distancia_minima > umbral:
                 break
@@ -259,4 +258,4 @@ if __name__ == "__main__":
         # Mostrar dendrograma
         dendrogram(Z)
         plt.show()
-        plt.savefig("dendograma", dpi = 450)
+        plt.savefig("dendograma", dpi=450)
