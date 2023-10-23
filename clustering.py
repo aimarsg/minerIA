@@ -28,7 +28,7 @@ def leer_datos():
 
 def reducir_dimensionalidad_pca(data):
     # Realizar PCA para reducir la dimensionalidad a 500
-    pca = PCA(n_components=100)
+    pca = PCA(n_components=2)
     df_reducido = pca.fit_transform(data)
 
     with open(sys.argv[2], 'a') as archivo:
