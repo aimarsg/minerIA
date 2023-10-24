@@ -1,9 +1,10 @@
 import argparse
 import json
 import pickle
-
+import csv
 import numpy as np
 
+archivoSalida = "salida.csv"
 
 def asignar_labels(num_instancias, lista_clusters):
     labels = np.arange(num_instancias)
@@ -31,6 +32,8 @@ def distancia(instancias, distancia):
     # leer los clusters
     # clusters = {}
     num_inst = len(instancias)
+    with open(archivoSalida, 'r') as file:
+        lines = file.readlines()
     for line in lines[1:]:
         columns = line.strip().split(',')
         second_column = columns[1].strip()
@@ -61,6 +64,8 @@ def distancia(instancias, distancia):
 
 def numero_de_clusters(numero):
     # Lógica para determinar el número de clusters utilizando los datos procesados
+    with open(archivoSalida, 'r') as file:
+        lines = file.readlines()
     fusion_data_dict = {}
 
     for line in lines[1:]:
@@ -127,25 +132,32 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Descripción de tu programa')
     parser.add_argument('opcion', type=int, choices=[1, 2, 3],
                         help='Elija una opción: 1 para distancia, 2 para número de clusters, 3 para asignar instancias nuevas')
-    parser.add_argument('input_file', type=str, help='Ruta al archivo de entrada')
+    parser.add_argument('--input_file', type=str, help='Ruta al archivo de entrada', required=False)
     parser.add_argument('--distancia', type=float, help='Maxima distancia', required=False)
-    parser.add_argument('--num', type=int, help='Maxima distancia', required=False)
+    parser.add_argument('--num', type=int, help='Número de clusters', required=False)
 
     args = parser.parse_args()
 
-    with open(args.input_file, 'r') as file:
-        lines = file.readlines()
-        if lines:
-            first_line = lines[0].strip()
-            if first_line.startswith("numero de instancias:"):
-                num_instances = int(first_line.split(":")[1])
+    try:
+        with open('instancias.pickle', 'rb') as f:
+            instancias = pickle.load(f)
+    except FileNotFoundError:
+        print("El archivo 'instancias.pickle' no se encontró.")
+    except pickle.UnpicklingError:
+        print("Error al cargar el archivo 'instancias.pickle'. Asegúrate de que el archivo sea válido.")
 
-                with open('instancias.pickle', 'rb') as f:
-                    instancias = pickle.load(f)
-            else:
-                print("El formato del archivo no es válido.")
-        else:
-            print("El archivo está vacío.")
+    def cargar_nuevas_instancias(ruta_archivo):
+        nuevas_instancias = []
+        with open(ruta_archivo, 'r') as csvfile:
+            reader = csv.reader(csvfile)
+            next(reader)  # Saltar la primera fila si contiene encabezados
+            for row in reader:
+                # Aquí, procesa cada fila del archivo CSV y agrega las instancias a nuevas_instancias
+                # En este ejemplo, se convierten los valores a punto flotante y se omiten las dos últimas columnas (User y Label)
+                nueva_instancia = [float(value) for value in row[:-2]]
+                nuevas_instancias.append(nueva_instancia)
+        return nuevas_instancias
+
 
     if args.opcion == 1:
         if args.distancia is not None:
@@ -155,4 +167,11 @@ if __name__ == "__main__":
         centroides = numero_de_clusters(args.num)
         print(centroides)
     elif args.opcion == 3:
-        asignar_instancias_nuevas(instancias)
+        nuevas_instancias = cargar_nuevas_instancias(args.input_file)
+        asignaciones = asignar_instancias_nuevas(args.num, nuevas_instancias)
+
+        # Imprimir los resultados de asignaciones
+        for cluster, instancias_asignadas in asignaciones.items():
+            print(f"Cluster {cluster}:")
+            for i, instancia in enumerate(instancias_asignadas, 1):
+                print(f"Instancia {i}")
