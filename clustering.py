@@ -14,6 +14,7 @@ from sklearn.metrics import silhouette_score
 distancia_entre_instancias = {}
 distancia_entre_clusters = {}
 lista_clusters = {}
+t_distancia = 1
 
 
 def leer_datos():
@@ -72,6 +73,8 @@ def calcular_distancia_entre_clusters(idxcluster1, idxcluster2):
     global distancia_entre_clusters
     global lista_clusters
 
+    distancias = []
+
     cluster1 = lista_clusters[idxcluster1]
     cluster2 = lista_clusters[idxcluster2]
 
@@ -90,32 +93,58 @@ def calcular_distancia_entre_clusters(idxcluster1, idxcluster2):
 
             if (idxcluster1, idxinstancia2) in distancia_entre_clusters.keys():
                 dist = distancia_entre_clusters[(idxcluster1, idxinstancia2)]
+                distancias.append(dist)
             elif (idxinstancia2, idxcluster1) in distancia_entre_clusters.keys():
                 dist = distancia_entre_clusters[(idxinstancia2, idxcluster1)]
+                distancias.append(dist)
             elif (idxinstancia1, idxcluster2) in distancia_entre_clusters.keys():
                 dist = distancia_entre_clusters[(idxinstancia1, idxcluster2)]
+                distancias.append(dist)
             elif (idxcluster2, idxinstancia1) in distancia_entre_clusters.keys():
                 dist = distancia_entre_clusters[(idxcluster2, idxinstancia1)]
+                distancias.append(dist)
 
             elif tupla1 in distancia_entre_clusters.keys():
                 dist = distancia_entre_clusters[tupla1]
+                distancias.append(dist)
             elif tupla2 in distancia_entre_clusters.keys():
                 dist = distancia_entre_clusters[tupla2]
+                distancias.append(dist)
 
             elif tupla1 in distancia_entre_instancias.keys():
                 dist = distancia_entre_instancias[tupla1]
+                distancias.append(dist)
             elif tupla2 in distancia_entre_instancias.keys():
                 dist = distancia_entre_instancias[tupla2]
+                distancias.append(dist)
 
             else:
                 print(
                     f"Error : tupla1 {tupla1} \n clusters (d) {idxcluster1}: {cluster1} y {idxcluster2} :{cluster2} \n")
                 input("continuar...")
-
+            """
             if dist < distancia_minima:
-                distancia_minima = dist
+                distancia_minima = dist"""
 
-    return distancia_minima
+    # return distancia_minima
+
+    # LOGICA PARA SACAR LA DISTANCIA ENTRE LOS CLUSTERS
+    # 1> SINGLE LINK
+    # 2> COMPLETE LINK
+    # 3> MEAN LINK
+    if t_distancia == 1:
+        # distancia minima
+        # print(min(distancias))
+        return min(distancias)
+
+    elif t_distancia == 2:
+        # distancia maxima
+        # print(max(distancias))
+        return max(distancias)
+
+    elif t_distancia == 3:
+        # distancia media
+        return sum(distancias)/len(distancias)
 
 
 def actualizar_distancias(clusters_cercanos, id_nuevo_cluster):
@@ -237,11 +266,18 @@ def cluster_jerarquico(data, umbral):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 4:
-        print("Uso: python clustering.py [fichero de entrada] [fichero de salida] [PCA/no]")
+    if len(sys.argv) < 4:
+        print("Uso: python clustering.py [fichero de entrada] [fichero de salida] [PCA/no] [distancia]")
         print("Ejemplo: python clustering.py entrada.csv salida.csv PCA")
+        print("El parametro distancia es opcional. \n"
+              "1 para single link\n"
+              "2 para complete link\n"
+              "3 para mean link")
         exit(0)
     else:
+        if len(sys.argv)==5:
+            if int(sys.argv[4])>=1 and int(sys.argv[4])<=3:
+                t_distancia = int(sys.argv[4])
         datos = leer_datos()
         if sys.argv[3] == 'PCA':
             datos = reducir_dimensionalidad_pca(datos)
