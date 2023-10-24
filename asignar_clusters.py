@@ -128,6 +128,19 @@ def asignar_a_cluster(instancia, centroides):
     return cluster_mas_cercano
 
 
+def cargar_nuevas_instancias(ruta_archivo):
+    nuevas_instancias = []
+    with open(ruta_archivo, 'r') as csvfile:
+        reader = csv.reader(csvfile)
+        next(reader)  # Saltar la primera fila si contiene encabezados
+        for row in reader:
+            # Aquí, procesa cada fila del archivo CSV y agrega las instancias a nuevas_instancias
+            # En este ejemplo, se convierten los valores a punto flotante y se omiten las dos últimas columnas (User y Label)
+            nueva_instancia = [float(value) for value in row[:-2]]
+            nuevas_instancias.append(nueva_instancia)
+    return nuevas_instancias
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Descripción de tu programa')
     parser.add_argument('opcion', type=int, choices=[1, 2, 3],
@@ -146,17 +159,7 @@ if __name__ == "__main__":
     except pickle.UnpicklingError:
         print("Error al cargar el archivo 'instancias.pickle'. Asegúrate de que el archivo sea válido.")
 
-    def cargar_nuevas_instancias(ruta_archivo):
-        nuevas_instancias = []
-        with open(ruta_archivo, 'r') as csvfile:
-            reader = csv.reader(csvfile)
-            next(reader)  # Saltar la primera fila si contiene encabezados
-            for row in reader:
-                # Aquí, procesa cada fila del archivo CSV y agrega las instancias a nuevas_instancias
-                # En este ejemplo, se convierten los valores a punto flotante y se omiten las dos últimas columnas (User y Label)
-                nueva_instancia = [float(value) for value in row[:-2]]
-                nuevas_instancias.append(nueva_instancia)
-        return nuevas_instancias
+
 
 
     if args.opcion == 1:
