@@ -1,36 +1,35 @@
+import argparse
 import copy
-import csv
 import pickle
 import sys
 import pandas as pd
 import numpy as np
 from scipy.cluster.hierarchy import dendrogram
 from sklearn.decomposition import PCA
-import math
 import matplotlib.pyplot as plt
 from sklearn.metrics import silhouette_score
+
 
 # VARIABLES GLOBALES #
 distancia_entre_instancias = {}
 distancia_entre_clusters = {}
 lista_clusters = {}
-t_distancia = 1
+t_distancia = 1 # default: single link
+t_mink = 2      # default: distancia euclidea
+fich_salida = 'salida.txt' # default
 
 
-def leer_datos():
-    input_file = sys.argv[1]
+def leer_datos(input_file):
     df = pd.read_csv(input_file, sep=",")
     df = df.drop('User', axis=1)
     df = df.drop('Label', axis=1)
-    # df = df.head(50)
     with open(sys.argv[2], 'w') as archivo:
         archivo.write(f"numero de instancias: {len(df.index)} \n")
     return df.values.tolist()
 
 
-def reducir_dimensionalidad_pca(data):
-    # Realizar PCA para reducir la dimensionalidad a 500
-    pca = PCA(n_components=2)
+def reducir_dimensionalidad_pca(data, dim):
+    pca = PCA(n_components=dim)
     df_reducido = pca.fit_transform(data)
     return df_reducido
 
@@ -38,14 +37,13 @@ def reducir_dimensionalidad_pca(data):
 def inicializar_distancias(clusters):
     global distancia_entre_clusters
     global distancia_entre_instancias
-
     distancia_minima = float('inf')
 
     for cluster1 in range(len(clusters)):
         for cluster2 in range(cluster1 + 1, len(clusters)):
             instancia1 = clusters[cluster1][0]
             instancia2 = clusters[cluster2][0]
-            distancia = euclidean_distance(instancia1, instancia2)
+            distancia = distancia_minkowski(instancia1, instancia2)
             distancia_entre_instancias[(cluster1, cluster2)] = distancia
             if distancia < distancia_minima:
                 distancia_minima = distancia
@@ -55,7 +53,6 @@ def inicializar_distancias(clusters):
 
 def fusionar_clusters(clusters_cercanos):
     global lista_clusters
-
     i1, i2 = clusters_cercanos
     print(f"fusionando clusters... {i1} y {i2}")
     clusters_fusionados = [i1, i2]
@@ -64,8 +61,25 @@ def fusionar_clusters(clusters_cercanos):
     return id_nuevo_cluster
 
 
-def euclidean_distance(point1, point2):
-    return np.sqrt(np.sum((np.array(point1) - np.array(point2)) ** 2))
+def distancia_minkowski(point1, point2):
+    if np.isnan(point1).any():
+        print("point1 contiene NaN.")
+    if np.isinf(point1).any():
+        print("point1 contiene valores infinitos.")
+
+    # Verificar si point2 contiene NaN o inf
+    if np.isnan(point2).any():
+        print("point2 contiene NaN.")
+    if np.isinf(point2).any():
+        print("point2 contiene valores infinitos.")
+
+    if len(point1)!=len(point2):
+        print("distinta longitud")
+        input("error")
+    # calcula la distancia minkowski del valor establecido en el argumetno t_mink
+
+    res = np.power(np.sum((np.array(point1) - np.array(point2)) ** t_mink), (1/5))
+    return res
 
 
 def calcular_distancia_entre_clusters(idxcluster1, idxcluster2):
@@ -84,8 +98,6 @@ def calcular_distancia_entre_clusters(idxcluster1, idxcluster2):
     if not isinstance(cluster2[0], int):
         cluster2 = [idxcluster2]
 
-    distancia_minima = float('inf')
-    dist = 0
     for idxinstancia1 in cluster1:
         for idxinstancia2 in cluster2:
             tupla1 = (idxinstancia1, idxinstancia2)
@@ -119,14 +131,8 @@ def calcular_distancia_entre_clusters(idxcluster1, idxcluster2):
                 distancias.append(dist)
 
             else:
-                print(
-                    f"Error : tupla1 {tupla1} \n clusters (d) {idxcluster1}: {cluster1} y {idxcluster2} :{cluster2} \n")
+                print(f"Error : tupla1 {tupla1} \n clusters (d) {idxcluster1}: {cluster1} y {idxcluster2} :{cluster2} \n")
                 input("continuar...")
-            """
-            if dist < distancia_minima:
-                distancia_minima = dist"""
-
-    # return distancia_minima
 
     # LOGICA PARA SACAR LA DISTANCIA ENTRE LOS CLUSTERS
     # 1> SINGLE LINK
@@ -144,7 +150,7 @@ def calcular_distancia_entre_clusters(idxcluster1, idxcluster2):
 
     elif t_distancia == 3:
         # distancia media
-        return sum(distancias)/len(distancias)
+        return sum(distancias) / len(distancias)
 
 
 def actualizar_distancias(clusters_cercanos, id_nuevo_cluster):
@@ -190,9 +196,7 @@ def actualizar_distancias(clusters_cercanos, id_nuevo_cluster):
 
 def asignar_labels(num_instancias):
     labels = np.arange(num_instancias)
-
     lista = list(lista_clusters.keys())
-
     while True and len(lista) > 0:
         elemento = lista.pop()
         if elemento < num_instancias:
@@ -212,12 +216,10 @@ def marcar_labels(cluster, labels, label, lista):
             marcar_labels(lista_clusters[elemento], labels, label, lista)
 
 
-def cluster_jerarquico(data, umbral):
+def cluster_jerarquico(data):
     global distancia_entre_clusters
     global distancia_entre_instancias
     global lista_clusters
-
-    lista_clusters.keys()
 
     j = 0
     for p in data:
@@ -234,9 +236,7 @@ def cluster_jerarquico(data, umbral):
     silhouette_scores = []
 
     with open(sys.argv[2], 'a') as archivo:
-
         while j > i:
-
             print("-------------------ITERACION " + str(i) + "-------------------------")
 
             clusters_cercanos, distancia_minima = min(distancia_entre_clusters.items(), key=lambda x: x[1])
@@ -257,41 +257,52 @@ def cluster_jerarquico(data, umbral):
             Z.append(
                 [clusters_cercanos[0], clusters_cercanos[1], distancia_minima, len(lista_clusters[id_cluster_nuevo])])
 
-            if distancia_minima > umbral:
-                break
-
             i += 1
 
     return lista_clusters, np.array(Z)
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 4:
-        print("Uso: python clustering.py [fichero de entrada] [fichero de salida] [PCA/no] [distancia]")
-        print("Ejemplo: python clustering.py entrada.csv salida.csv PCA")
-        print("El parametro distancia es opcional. \n"
-              "1 para single link\n"
-              "2 para complete link\n"
-              "3 para mean link")
-        exit(0)
-    else:
-        if len(sys.argv)==5:
-            if int(sys.argv[4])>=1 and int(sys.argv[4])<=3:
-                t_distancia = int(sys.argv[4])
-        datos = leer_datos()
-        if sys.argv[3] == 'PCA':
-            datos = reducir_dimensionalidad_pca(datos)
-            print("Dimensionalidad reducida con PCA:", datos.shape)
+    parser = argparse.ArgumentParser(description="Clustering jerarquico")
+    parser.add_argument('fich_entrada', type=str, help="Ruta al fichero de entrada")
+    parser.add_argument('salida', type=str, help="Nombre del archivo de salida")
+    parser.add_argument('--PCA', type=int, help="opcional, indica la dimension del PCA")
+    parser.add_argument('--distancia', type=int, choices=[1, 2, 3], help="opcional, indica la distancia entre clusters a utilizar\n"
+                                                                        "1 para single link\n"
+                                                                      "2 para complete link\n"
+                                                                      "3 para mean link")
+    parser.add_argument('--mink', type=int , help='Distancia minkowski', required=False)
 
-        print(f"Numero de instancias: {len(datos)}")
-        umbral_clusters = 10  # Ajusta este valor según tus necesidades
+    args = parser.parse_args()
 
-        # Obtener clusters jerárquicos
-        clusters, Z = cluster_jerarquico(datos, umbral_clusters)
+    fich_salida = args.salida
 
-        print(clusters)
+    datos = leer_datos(args.fich_entrada)
 
-        # Mostrar dendrograma
-        dendrogram(Z)
-        plt.show()
-        plt.savefig("dendograma", dpi=450)
+    if args.PCA is not None:
+        datos = reducir_dimensionalidad_pca(datos, args.PCA)
+        print("Dimensionalidad reducida con PCA:", datos.shape)
+
+    if args.distancia is not None:
+        t_distancia = args.distancia
+
+    if args.mink is not None:
+        if args.mink%2 == 0:
+            t_mink = args.mink
+        else:
+            print("distancia no valida, se va a utilizar la euclidea")
+            input("pulsa para continuar... ")
+
+
+    print(f"Numero de instancias: {len(datos)}")
+
+    # Obtener clusters jerárquicos
+    clusters, Z = cluster_jerarquico(datos)
+
+    print(clusters)
+
+    # Mostrar dendrograma
+    dendrogram(Z)
+    plt.gcf().set_size_inches(38.4, 21.6)
+    plt.savefig(args.salida+".png", dpi=500, bbox_inches='tight')
+    plt.show()
