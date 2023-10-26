@@ -20,6 +20,10 @@ fich_salida = 'salida.txt' # default
 
 
 def leer_datos(input_file):
+    """
+    input file: dataset en formato csv que contiene las columnas user, label y post
+    devuelte: una lista de los posts
+    """
     df = pd.read_csv(input_file, sep=",")
     df = df.drop('User', axis=1)
     df = df.drop('Label', axis=1)
@@ -29,12 +33,22 @@ def leer_datos(input_file):
 
 
 def reducir_dimensionalidad_pca(data, dim):
+    """
+    data: lista de instancias, dim: la nueva dimension
+    devuelve: la lista con el numero de dimensiones indicado
+    """
     pca = PCA(n_components=dim)
     df_reducido = pca.fit_transform(data)
     return df_reducido
 
 
 def inicializar_distancias(clusters):
+    """
+    clusters: un diccionario de los clusters iniciales (un cluster por cada instancia)
+    calcula la distancia entre todas las instancias y se almacena en 
+                                                                - distancia_entre_instancias (diccionario)
+                                                                - distancia_entre_clusters   (dicccionario)
+    """
     global distancia_entre_clusters
     global distancia_entre_instancias
     distancia_minima = float('inf')
@@ -52,6 +66,10 @@ def inicializar_distancias(clusters):
 
 
 def fusionar_clusters(clusters_cercanos):
+    """
+    clusters_cercanos: una tupla con los indices de los clusters con distancia menor (i1, i2)
+    devuelve: el id del nuevo cluster creado que contiene los dos id de los clusters_cercanos
+    """
     global lista_clusters
     i1, i2 = clusters_cercanos
     print(f"fusionando clusters... {i1} y {i2}")
@@ -62,27 +80,24 @@ def fusionar_clusters(clusters_cercanos):
 
 
 def distancia_minkowski(point1, point2):
-    if np.isnan(point1).any():
-        print("point1 contiene NaN.")
-    if np.isinf(point1).any():
-        print("point1 contiene valores infinitos.")
-
-    # Verificar si point2 contiene NaN o inf
-    if np.isnan(point2).any():
-        print("point2 contiene NaN.")
-    if np.isinf(point2).any():
-        print("point2 contiene valores infinitos.")
-
-    if len(point1)!=len(point2):
-        print("distinta longitud")
-        input("error")
-    # calcula la distancia minkowski del valor establecido en el argumetno t_mink
-
-    res = np.power(np.sum((np.array(point1) - np.array(point2)) ** t_mink), (1/t_mink))
+    """
+    point1 y point2: dos vectores de igual longitud que representan dos instancias distintas
+    devuelve: la distancia minkowski de orden t_mink entre los dos vectores
+    """
+    res = (np.sum((abs( np.array(point1) - np.array(point2) )) ** t_mink)) ** (1/t_mink)
+    #res = np.power(np.sum((np.array(point1) - np.array(point2)) ** t_mink), (1/t_mink))
     return res
 
 
 def calcular_distancia_entre_clusters(idxcluster1, idxcluster2):
+    """
+    idxcluster1 e idxcluster2: id de clusters
+    devuelve: la distancia entre esos dos clusters, a partir de los valores almacenados en el diccionario de distancias,
+        en funcion del valor t_distancia:
+        1> SINGLE LINK (minima)
+        2> COMPLETE LINK (maxima)
+        3> MEAN LINK (media)
+    """
     global distancia_entre_instancias
     global distancia_entre_clusters
     global lista_clusters
@@ -102,7 +117,7 @@ def calcular_distancia_entre_clusters(idxcluster1, idxcluster2):
         for idxinstancia2 in cluster2:
             tupla1 = (idxinstancia1, idxinstancia2)
             tupla2 = (idxinstancia2, idxinstancia1)
-
+            # comprobar si ya existe la distancia entre las instancias de un cluster y el otro cluster directamente
             if (idxcluster1, idxinstancia2) in distancia_entre_clusters.keys():
                 dist = distancia_entre_clusters[(idxcluster1, idxinstancia2)]
                 distancias.append(dist)
@@ -115,14 +130,15 @@ def calcular_distancia_entre_clusters(idxcluster1, idxcluster2):
             elif (idxcluster2, idxinstancia1) in distancia_entre_clusters.keys():
                 dist = distancia_entre_clusters[(idxcluster2, idxinstancia1)]
                 distancias.append(dist)
-
+            #comprobar distancias entre pares de instancias de ambos clusters
             elif tupla1 in distancia_entre_clusters.keys():
                 dist = distancia_entre_clusters[tupla1]
                 distancias.append(dist)
             elif tupla2 in distancia_entre_clusters.keys():
                 dist = distancia_entre_clusters[tupla2]
                 distancias.append(dist)
-
+            #si no estan en la distancia entre clusters podria estar en la distancia entre instancias, 
+            # ya que podrian ser clusters aun no fusionados
             elif tupla1 in distancia_entre_instancias.keys():
                 dist = distancia_entre_instancias[tupla1]
                 distancias.append(dist)
@@ -135,25 +151,25 @@ def calcular_distancia_entre_clusters(idxcluster1, idxcluster2):
                 input("continuar...")
 
     # LOGICA PARA SACAR LA DISTANCIA ENTRE LOS CLUSTERS
-    # 1> SINGLE LINK
-    # 2> COMPLETE LINK
-    # 3> MEAN LINK
+    
     if t_distancia == 1:
-        # distancia minima
-        # print(min(distancias))
         return min(distancias)
 
     elif t_distancia == 2:
-        # distancia maxima
-        # print(max(distancias))
         return max(distancias)
 
     elif t_distancia == 3:
-        # distancia media
         return sum(distancias) / len(distancias)
 
 
 def actualizar_distancias(clusters_cercanos, id_nuevo_cluster):
+    """
+    clusters_cercanos: tupla con los clusters que se unen
+    id_nuevo_cluster: id del cluster nuevo creado que contiene los clusters que se unen
+
+    elimina del diccionario distancia_entre_clusters las distancias de los clusters_cercanos a los demas
+    añade al diccionario distancia_entre_clusters las distancias del nuevo cluster a los demas
+    """
     global distancia_entre_clusters
 
     i, j = clusters_cercanos
@@ -195,18 +211,26 @@ def actualizar_distancias(clusters_cercanos, id_nuevo_cluster):
 
 
 def asignar_labels(num_instancias):
+    """
+    num_instancias: el numero de instancias inicial
+    calcula la etiqueta correspondiente a cada instancia, yendo hacia abajo en el arbol
+    devuelve: una lista con la etiqueta correspondiente a cada instancia y el numero de etiquetas distintas
+    """
     labels = np.arange(num_instancias)
     lista = list(lista_clusters.keys())
     while True and len(lista) > 0:
         elemento = lista.pop()
         if elemento < num_instancias:
             break
-        marcar_labels(lista_clusters[elemento], labels, elemento, lista)
+        marcar_labels(lista_clusters[elemento], labels, elemento, lista) # llamada al metodo recursivo
     unique_labels = np.unique(labels)
     return labels, len(unique_labels)
 
 
 def marcar_labels(cluster, labels, label, lista):
+    """
+    metodo recursivo para profundizar en el arbol y obtener la etiqueta de cada instancia
+    """
     for elemento in cluster:
         idElemento = lista.index(elemento)
         lista.pop(idElemento)
@@ -217,30 +241,38 @@ def marcar_labels(cluster, labels, label, lista):
 
 
 def cluster_jerarquico(data):
+    """
+    data: las instancias vectorizadas sobre las que se quiere aplicar el clustering jerarquico
+    devuelve:
+            - lista_clusters: un diccionario que representa el arbol generado en el algoritmo, 
+            que contiene las instancias originales y todas las uniones que se han realizado en las sucesivas iteraciones
+            - un array con la información necesaria para hacer la representación gráfica a traves de un dendograma
+    """
     global distancia_entre_clusters
     global distancia_entre_instancias
     global lista_clusters
 
     j = 0
-    for p in data:
+    for p in data:  # inicializar la lista de clusters
         lista_clusters[j] = [p]
         j += 1
 
     with open('instancias.pickle', 'wb') as f:
         pickle.dump(lista_clusters, f)
 
-    inicializar_distancias(lista_clusters)
-    i = 1
+    inicializar_distancias(lista_clusters) # inicializar las distancias
 
-    Z = []  # Matriz de enlace
-    silhouette_scores = []
+    i = 1
+    Z = []  # Matriz de enlace (para la representacion del dendograma)
+    silhouette_scores = [] # lista de puntuaciones silhouette
 
     with open(sys.argv[2], 'a') as archivo:
         while j > i:
             print("-------------------ITERACION " + str(i) + "-------------------------")
-
+            #obtener clusters con la distancia minima
             clusters_cercanos, distancia_minima = min(distancia_entre_clusters.items(), key=lambda x: x[1])
 
+            #unir los clusters mas cercanos y actualizar el diccionario de distancias
             id_cluster_nuevo = fusionar_clusters(clusters_cercanos)
             actualizar_distancias(clusters_cercanos, id_cluster_nuevo)
 
@@ -254,6 +286,7 @@ def cluster_jerarquico(data):
                 silhouette_scores.append(silhouette)
                 archivo.write(f"Silhouette Score: {silhouette}\n")
 
+            # añadir la informacion para el dendograma
             Z.append(
                 [clusters_cercanos[0], clusters_cercanos[1], distancia_minima, len(lista_clusters[id_cluster_nuevo])])
 
@@ -287,12 +320,12 @@ if __name__ == "__main__":
         t_distancia = args.distancia
 
     if args.mink is not None:
-        if args.mink == 1 or args.mink % 2 == 0:
+        if args.mink >= 1:
             t_mink = args.mink
         else:
             print("distancia no valida, se va a utilizar la euclidea")
             input("pulsa para continuar... ")
-
+        
 
     print(f"Numero de instancias: {len(datos)}")
 
@@ -301,7 +334,7 @@ if __name__ == "__main__":
 
     print(clusters)
 
-    # Mostrar dendrograma
+    # Mostrar dendrograma y guardarlo
     dendrogram(Z)
     plt.gcf().set_size_inches(38.4, 21.6)
     plt.savefig(args.salida+".png", dpi=500, bbox_inches='tight')
