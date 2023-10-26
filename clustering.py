@@ -77,8 +77,8 @@ def distancia_minkowski(point1, point2):
         print("distinta longitud")
         input("error")
     # calcula la distancia minkowski del valor establecido en el argumetno t_mink
-
-    res = np.power(np.sum((np.array(point1) - np.array(point2)) ** t_mink), (1/t_mink))
+    res = (np.sum((abs( np.array(point1) - np.array(point2) )) ** t_mink)) ** (1/t_mink)
+    #res = np.power(np.sum((np.array(point1) - np.array(point2)) ** t_mink), (1/t_mink))
     return res
 
 
@@ -287,12 +287,12 @@ if __name__ == "__main__":
         t_distancia = args.distancia
 
     if args.mink is not None:
-        if args.mink == 1 or args.mink % 2 == 0:
+        if args.mink >= 1:
             t_mink = args.mink
         else:
             print("distancia no valida, se va a utilizar la euclidea")
             input("pulsa para continuar... ")
-
+        
 
     print(f"Numero de instancias: {len(datos)}")
 
