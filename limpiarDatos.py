@@ -1,9 +1,6 @@
 import csv
 import sys
 import pandas as pd  # Importa Pandas
-from spellchecker import SpellChecker
-from nltk import word_tokenize
-from nltk.stem.porter import PorterStemmer
 import re
 from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
@@ -304,7 +301,6 @@ W8=Wait...
 """
 STOPWORDS = set(stopwords.words('english'))
 stemmer = PorterStemmer()
-spell = SpellChecker()
 
 
 def remove_stopwords(text):
@@ -374,9 +370,9 @@ def tokenize(text):
     return filtered_tokens'''
 
 
-def main():
-    input_file = sys.argv[1]
-    output_file = sys.argv[2]
+def main(input, output):
+    input_file = input
+    output_file = output
 
     try:
         # Cargar el archivo CSV en un DataFrame de Pandas

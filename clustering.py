@@ -9,6 +9,7 @@ from sklearn.decomposition import PCA
 import math
 import matplotlib.pyplot as plt
 from sklearn.metrics import silhouette_score
+import pdb
 
 # VARIABLES GLOBALES #
 distancia_entre_instancias = {}
@@ -22,9 +23,10 @@ def leer_datos():
     df = pd.read_csv(input_file, sep=",")
     df = df.drop('User', axis=1)
     df = df.drop('Label', axis=1)
-    # df = df.head(50)
+    df = df.head(50)
     with open(sys.argv[2], 'w') as archivo:
         archivo.write(f"numero de instancias: {len(df.index)} \n")
+
     return df.values.tolist()
 
 
@@ -232,7 +234,7 @@ def cluster_jerarquico(data, umbral):
 
     Z = []  # Matriz de enlace
     silhouette_scores = []
-
+    lista_cluster_fus = {}
     with open(sys.argv[2], 'a') as archivo:
 
         while j > i:
@@ -240,8 +242,8 @@ def cluster_jerarquico(data, umbral):
             print("-------------------ITERACION " + str(i) + "-------------------------")
 
             clusters_cercanos, distancia_minima = min(distancia_entre_clusters.items(), key=lambda x: x[1])
-
             id_cluster_nuevo = fusionar_clusters(clusters_cercanos)
+            lista_cluster_fus[id_cluster_nuevo] = clusters_cercanos
             actualizar_distancias(clusters_cercanos, id_cluster_nuevo)
 
             archivo.write(
@@ -253,17 +255,28 @@ def cluster_jerarquico(data, umbral):
                 silhouette = silhouette_score(data, labels)
                 silhouette_scores.append(silhouette)
                 archivo.write(f"Silhouette Score: {silhouette}\n")
-
+            for key, values in lista_cluster_fus.items():
+                instancias_fusionadas = []
+                for v in values:
+                    centroide_fusionado = calcular_centroide_recursivo(v,lista_clusters, lista_cluster_fus, instancias_fusionadas)
             Z.append(
-                [clusters_cercanos[0], clusters_cercanos[1], distancia_minima, len(lista_clusters[id_cluster_nuevo])])
+                [clusters_cercanos[0], clusters_cercanos[1], distancia_minima, len(centroide_fusionado)])
 
             if distancia_minima > umbral:
                 break
 
             i += 1
-
+    print(Z)
     return lista_clusters, np.array(Z)
 
+def calcular_centroide_recursivo(cluster, instancias, lista, instancias_fusionadas):
+    if cluster in lista.keys():  # Si es un índice de instancia
+        a = lista[cluster]
+        for v in a:
+            calcular_centroide_recursivo(v, instancias, lista, instancias_fusionadas)
+    else:
+        instancias_fusionadas.append(instancias[cluster][0])
+    return instancias_fusionadas
 
 if __name__ == "__main__":
     if len(sys.argv) < 4:
@@ -288,10 +301,7 @@ if __name__ == "__main__":
 
         # Obtener clusters jerárquicos
         clusters, Z = cluster_jerarquico(datos, umbral_clusters)
-
-        print(clusters)
-
         # Mostrar dendrograma
         dendrogram(Z)
+        plt.savefig("dendograma", dpi=500)
         plt.show()
-        plt.savefig("dendograma", dpi=450)
