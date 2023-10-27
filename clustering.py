@@ -26,6 +26,7 @@ def leer_datos(input_file):
     """
     df = pd.read_csv(input_file, sep=",")
     df = df.drop('User', axis=1)
+    df['Label'].to_csv("real_labels.txt", index=False, header=False)
     df = df.drop('Label', axis=1)
     with open(sys.argv[2], 'w') as archivo:
         archivo.write(f"numero de instancias: {len(df.index)} \n")
