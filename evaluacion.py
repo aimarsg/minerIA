@@ -56,10 +56,11 @@ def matriz_de_confusion(predicted_labels, train_y):
     # Obtener matriz de confusión Class to clustering eval
     cm = confusion_matrix(np.vectorize(to_string)(predicted_labels), np.vectorize(to_string)(train_y))
     # Dibujar el heatmap
-    ax = sns.heatmap(cm, annot=True, fmt="d", cmap="Blues")
-    plt.xlabel("Etiquetas")
-    plt.ylabel("Clusters")
-    plt.show()
+    if args.matriz:
+        ax = sns.heatmap(cm, annot=True, fmt="d", cmap="Blues")
+        plt.xlabel("Etiquetas")
+        plt.ylabel("Clusters")
+        plt.show()
 
     # Encontrar la asignación óptima utilizando el algoritmo de asignación óptima (Hungarian Algorithm)
     row_ind, col_ind = linear_sum_assignment(-cm)
@@ -69,11 +70,11 @@ def matriz_de_confusion(predicted_labels, train_y):
 
     # Dibujar el heatmap de la nueva matriz de confusión
     new_cm = confusion_matrix(np.vectorize(to_string)(reassigned_labels), np.vectorize(to_string)(train_y))
-    ax = sns.heatmap(new_cm, annot=True, fmt="d", cmap="Blues")
-    plt.xlabel("Etiquetas")
-    plt.ylabel("Clusters")
-    plt.show()
-
+    if args.matriz:
+        ax = sns.heatmap(new_cm, annot=True, fmt="d", cmap="Blues")
+        plt.xlabel("Etiquetas")
+        plt.ylabel("Clusters")
+        plt.show()
 
     # Calcula las métricas
     accuracy = accuracy_score(train_y, labels)
@@ -139,7 +140,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('input_file', type=str, help='Ruta al archivo de entrada')
     parser.add_argument('etiquetas', type=str, help='Ruta al archivo que contiene las etiquetas')
-    parser.add_argument('--dim', type=int, choices=[2, 3], help='Elija una opción:  2 para dibujar 2D, 3 para dibujar 3D')
+
+    parser.add_argument('--matriz', action='store_true', help='Opción para realizar el class to cluster y visualizar la matriz')
+    parser.add_argument('--instancias', action='store_true', help='Opción para visualizar las instancias')
+    parser.add_argument('--dim', type=int, choices=[2, 3],
+                        help='Elija una opción:  2 para dibujar 2D, 3 para dibujar 3D')
+
 
     args = parser.parse_args()
 
@@ -156,17 +162,19 @@ if __name__ == "__main__":
     etiquetas_reales = leer_etiquetas_reales(args.etiquetas)
 
     #print(etiquetas_reales)
+    if args.matriz or args.instancias:
+        labels_reasignados = matriz_de_confusion(labels, etiquetas_reales)
 
-    labels_reasignados = matriz_de_confusion(labels, etiquetas_reales)
+        with open('instancias.pickle', 'rb') as f:
+            instancias = pickle.load(f)
 
-    with open('instancias.pickle', 'rb') as f:
-        instancias = pickle.load(f)
+        if args.instancias:
 
-    if args.dim is not None:
-        dim = args.dim
-    else:
-        dim = 2
+            if args.dim is not None:
+                dim = args.dim
+            else:
+                dim = 2
 
-    dibujar_instancias(labels_reasignados, etiquetas_reales, dim)
+            dibujar_instancias(labels_reasignados, etiquetas_reales, dim)
 
 
