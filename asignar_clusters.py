@@ -7,6 +7,7 @@ import pdb
 import pandas as pd
 from gensim.models.doc2vec import Doc2Vec
 import bowAndTf_idf as bow
+import clustering
 import limpiarDatos as limpiar
 
 archivoSalida = "salida.csv"
@@ -156,7 +157,7 @@ def numero_de_clusters(numero):
                 centroide_dict_str = str(diccionario[key][0]).replace('\n', '')
                 instancias_file.write(
                     f"Cluster {key}; Centroide: {centroide_dict_str}; Instancias: {centroide_fusionado_str}; Vectores: {vectores_str}\n")
-
+    print("guardado en instancias_cluster2")
     return diccionario
 
 
@@ -265,6 +266,7 @@ if __name__ == "__main__":
     parser.add_argument('input_file', type=str, help='Ruta al archivo de entrada')
     parser.add_argument('--distancia', type=float, help='Maxima distancia', required=False)
     parser.add_argument('--num', type=int, help='Número de clusters', required=False)
+    parser.add_argument('--nuevas_instancias', type=str, help="fichero que contiene las nuevas instancias")
 
     args = parser.parse_args()
 
@@ -282,16 +284,17 @@ if __name__ == "__main__":
         if args.distancia is not None:
             distancia(instancias, args.distancia)
 
-    elif args.opcion == 2:
+    elif args.opcion == 2 and args.num is not None:
         numero_de_clusters(args.num)
 
-    elif args.opcion == 3:
-        limpiar.main("pruebaInstancia.csv", "new_vector_result2.csv")
+    elif args.opcion == 3 and args.nuevas_instancias is not None and args.num is not None:
+        limpiar.main(args.nuevas_instancias, "new_vector_result2.csv")
         _, documentos = bow.read_csv("new_vector_result2.csv")
         documentos = bow.preprocess_text(documentos)
         model = Doc2Vec.load("d2v.model")
         nuevas_instancias = bow.add_new_instance(model, documentos)
-        asignaciones = asignar_instancias_nuevas(args.num, nuevas_instancias)
+        instancias_reducida = clustering.reducir_dimensionalidad_pca(nuevas_instancias, instancias[0][0])
+        asignaciones = asignar_instancias_nuevas(args.num, instancias_reducida)
         print(asignaciones)
         # Imprimir los resultados de asignaciones
         # for cluster, instancias_asignadas in asignaciones.items():

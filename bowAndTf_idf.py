@@ -5,6 +5,7 @@ from gensim.models.doc2vec import Doc2Vec, TaggedDocument
 from nltk.tokenize import RegexpTokenizer
 from nltk.stem import WordNetLemmatizer
 from gensim.matutils import sparse2full
+import limpiarDatos as limpiar
 
 def coerce_to_unicode(x):
     if sys.version_info < (3, 0):
@@ -53,7 +54,7 @@ def train_doc2vec_model(documents):
     tagged_data = [TaggedDocument(words=doc, tags=[str(i)]) for i, doc in enumerate(documents)]
 
     # Instantiate Doc2Vec model
-    model = Doc2Vec(vector_size=2, window=5, min_count=1, workers=4, epochs=10)
+    model = Doc2Vec(vector_size=500, window=5, min_count=1, workers=4, epochs=10)
 
     # Build vocabulary
     model.build_vocab(tagged_data)
@@ -164,8 +165,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.csv_file and not args.model:
+        limpiar.main(args.csv_file, args.csv_file+"_preprocesado")
+
         # Leer y preprocesar el archivo CSV
-        ml_dataset, documentos = read_csv(args.csv_file)
+        ml_dataset, documentos = read_csv(args.csv_file+"_preprocesado")
 
         documentos = preprocess_text(documentos)
 
