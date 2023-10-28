@@ -13,13 +13,19 @@ pip install -r requirements.txt
 ## Contenido
 El paquete de software contiene diferentes ejecutables:
 *   asignar_clusters.py
-*   bowAndTF-idf.py
+*   bowAndTF_idf.py
 *   clustering.py
 *   evaluación.py
 *   limpiarDatos.py
 
 
 ## Uso
+
+Primero hay que utilizar bowAndTF_idf.py para preprocesar el conjunto de datos. Con el parametro --csv_file se indica el fichero de entrada.
+
+```
+python bowAndTf_idf.py --csv_file 500_Reddit_users_posts_labels.csv
+```
 
 El comando para hacer el clustering es el siguiente: 
 ```python
@@ -35,21 +41,22 @@ Tiene los siguientes parametros opcionales:
 Ejemplo de uso:
 
 ```python
-python clustering.py doc2vec_results.csv resultsdoc2vec.txt --PCA 3 --distancia 2 --mink 3
+python clustering.py datos_preprocesados.csv resultadosClustering.txt --PCA 3 --distancia 2 --mink 3
 ```
 
-Para obtener los clusters a partir del árbol resultante, hay que llamar a asignar_clusters.py:
+Para obtener los clusters a partir del árbol resultante, hay que llamar a asignar_clusters.py con diferentes opciones, ssegún la opción deseada:
+* Obtener los clusters en función de una distancia dada:
 ```python
-python 
+python asignar_clusters.py 1 resultadosClustering.txt --distancia 3 
 ```
-
-Tiene los siguientes parametros opcionales:
-* -- 
-
-Ejemplo de uso:
+* Obtener los clusters en función del número de clusters deseado:
+```
+python asignar_clusters.py 2 resultadosClustering.txt --num 5
+```
+* Dados un número de clusters y unas instancias, asignar esas instancias a los clusters a los que pertenecen:
 
 ```python
-python 
+python asignar_clusters.py 3 resultadosClustering.txt --nuevas_instancias instancias.csv --num 5 
 ```
 
 Por último, para poder hacer una evaluación class to cluster y visualizar las instancias hay que hacer uso de evaluacion.py
