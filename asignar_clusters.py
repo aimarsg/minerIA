@@ -129,6 +129,7 @@ def numero_de_clusters(numero):
         diccionario[key] = centroides[key]
 
     with open("instancias_clusters2.txt", 'w') as instancias_file:
+        instancias_file.write(lines[0])
         for key, values in fusion_data_dict.items():
             if key in diccionario.keys():
                 instancias_fusionadas = []
@@ -142,7 +143,7 @@ def numero_de_clusters(numero):
                 vectores_str = str(vectores).replace('\n', '')
                 centroide_dict_str = str(diccionario[key][0]).replace('\n', '')
                 instancias_file.write(
-                    f"Cluster {key}; Centroide: {centroide_dict_str}; Instancias: {centroide_fusionado_str}; Vectores: {vectores_str}\n")
+                    f"Cluster: {key}; Centroide: {centroide_dict_str}; Instancias: {centroide_fusionado_str}; Vectores: {vectores_str}\n")
 
         for key, values in diccionario.items():
             if key not in fusion_data_dict.keys():
@@ -156,7 +157,7 @@ def numero_de_clusters(numero):
                 vectores_str = str(vectores).replace('\n', '')
                 centroide_dict_str = str(diccionario[key][0]).replace('\n', '')
                 instancias_file.write(
-                    f"Cluster {key}; Centroide: {centroide_dict_str}; Instancias: {centroide_fusionado_str}; Vectores: {vectores_str}\n")
+                    f"Cluster: {key}; Centroide: {centroide_dict_str}; Instancias: {centroide_fusionado_str}; Vectores: {vectores_str}\n")
     print("guardado en instancias_cluster2")
     return diccionario
 

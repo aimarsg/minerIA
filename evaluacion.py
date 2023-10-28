@@ -20,7 +20,8 @@ def obtenerLabels(fichero):
     labels = np.arange(num_instancias)
     i = 0
     for line in lines[1:]:
-        cols = line.split(';')
+        cols = line.strip().split(';')
+        print(cols)
         cluster_n = int(cols[0].split(':')[1])
         cluster = eval(cols[2].split(':')[1])
         for instancia in cluster:
