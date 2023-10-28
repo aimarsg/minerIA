@@ -14,9 +14,9 @@ import pdb
 distancia_entre_instancias = {}
 distancia_entre_clusters = {}
 lista_clusters = {}
-t_distancia = 1 # default: single link
-t_mink = 2      # default: distancia euclidea
-fich_salida = 'salida.txt' # default
+t_distancia = 1  # default: single link
+t_mink = 2  # default: distancia euclidea
+fich_salida = 'salida.txt'  # default
 
 
 def leer_datos(input_file):
@@ -86,8 +86,8 @@ def distancia_minkowski(point1, point2):
     point1 y point2: dos vectores de igual longitud que representan dos instancias distintas
     devuelve: la distancia minkowski de orden t_mink entre los dos vectores
     """
-    res = (np.sum((abs( np.array(point1) - np.array(point2) )) ** t_mink)) ** (1/t_mink)
-    #res = np.power(np.sum((np.array(point1) - np.array(point2)) ** t_mink), (1/t_mink))
+    res = (np.sum((abs(np.array(point1) - np.array(point2))) ** t_mink)) ** (1 / t_mink)
+    # res = np.power(np.sum((np.array(point1) - np.array(point2)) ** t_mink), (1/t_mink))
     return res
 
 
@@ -134,14 +134,14 @@ def calcular_distancia_entre_clusters(idxcluster1, idxcluster2):
             elif (idxcluster2, idxinstancia1) in distancia_entre_clusters.keys():
                 dist = distancia_entre_clusters[(idxcluster2, idxinstancia1)]
                 distancias.append(dist)
-            #comprobar distancias entre pares de instancias de ambos clusters
+            # comprobar distancias entre pares de instancias de ambos clusters
             elif tupla1 in distancia_entre_clusters.keys():
                 dist = distancia_entre_clusters[tupla1]
                 distancias.append(dist)
             elif tupla2 in distancia_entre_clusters.keys():
                 dist = distancia_entre_clusters[tupla2]
                 distancias.append(dist)
-            #si no estan en la distancia entre clusters podria estar en la distancia entre instancias,
+            # si no estan en la distancia entre clusters podria estar en la distancia entre instancias,
             # ya que podrian ser clusters aun no fusionados
             elif tupla1 in distancia_entre_instancias.keys():
                 dist = distancia_entre_instancias[tupla1]
@@ -151,7 +151,8 @@ def calcular_distancia_entre_clusters(idxcluster1, idxcluster2):
                 distancias.append(dist)
 
             else:
-                print(f"Error : tupla1 {tupla1} \n clusters (d) {idxcluster1}: {cluster1} y {idxcluster2} :{cluster2} \n")
+                print(
+                    f"Error : tupla1 {tupla1} \n clusters (d) {idxcluster1}: {cluster1} y {idxcluster2} :{cluster2} \n")
                 input("continuar...")
 
     # LOGICA PARA SACAR LA DISTANCIA ENTRE LOS CLUSTERS
@@ -226,7 +227,7 @@ def asignar_labels(num_instancias):
         elemento = lista.pop()
         if elemento < num_instancias:
             break
-        marcar_labels(lista_clusters[elemento], labels, elemento, lista) # llamada al metodo recursivo
+        marcar_labels(lista_clusters[elemento], labels, elemento, lista)  # llamada al metodo recursivo
     unique_labels = np.unique(labels)
     return labels, len(unique_labels)
 
@@ -264,19 +265,19 @@ def cluster_jerarquico(data):
     with open('instancias.pickle', 'wb') as f:
         pickle.dump(lista_clusters, f)
 
-    inicializar_distancias(lista_clusters) # inicializar las distancias
+    inicializar_distancias(lista_clusters)  # inicializar las distancias
 
     i = 1
     Z = []  # Matriz de enlace (para la representacion del dendograma)
-    silhouette_scores = [] # lista de puntuaciones silhouette
+    silhouette_scores = []  # lista de puntuaciones silhouette
     lista_cluster_fus = {}
     with open(sys.argv[2], 'a') as archivo:
         while j > i:
             print("-------------------ITERACION " + str(i) + "-------------------------")
-            #obtener clusters con la distancia minima
+            # obtener clusters con la distancia minima
             clusters_cercanos, distancia_minima = min(distancia_entre_clusters.items(), key=lambda x: x[1])
 
-            #unir los clusters mas cercanos y actualizar el diccionario de distancias
+            # unir los clusters mas cercanos y actualizar el diccionario de distancias
             id_cluster_nuevo = fusionar_clusters(clusters_cercanos)
             lista_cluster_fus[id_cluster_nuevo] = clusters_cercanos
             actualizar_distancias(clusters_cercanos, id_cluster_nuevo)
@@ -293,7 +294,8 @@ def cluster_jerarquico(data):
             for key, values in lista_cluster_fus.items():
                 instancias_fusionadas = []
                 for v in values:
-                    centroide_fusionado = calcular_centroide_recursivo(v,lista_clusters, lista_cluster_fus, instancias_fusionadas)
+                    centroide_fusionado = calcular_centroide_recursivo(v, lista_clusters, lista_cluster_fus,
+                                                                       instancias_fusionadas)
 
             # añadir la informacion para el dendograma
             Z.append(
@@ -301,6 +303,7 @@ def cluster_jerarquico(data):
 
             i += 1
     return lista_clusters, np.array(Z)
+
 
 def calcular_centroide_recursivo(cluster, instancias, lista, instancias_fusionadas):
     if cluster in lista.keys():  # Si es un índice de instancia
@@ -311,16 +314,18 @@ def calcular_centroide_recursivo(cluster, instancias, lista, instancias_fusionad
         instancias_fusionadas.append(instancias[cluster][0])
     return instancias_fusionadas
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Clustering jerarquico")
     parser.add_argument('fich_entrada', type=str, help="Ruta al fichero de entrada")
     parser.add_argument('salida', type=str, help="Nombre del archivo de salida")
     parser.add_argument('--PCA', type=int, help="opcional, indica la dimension del PCA")
-    parser.add_argument('--distancia', type=int, choices=[1, 2, 3], help="opcional, indica la distancia entre clusters a utilizar\n"
-                                                                        "1 para single link\n"
-                                                                      "2 para complete link\n"
-                                                                      "3 para mean link")
-    parser.add_argument('--mink', type=int , help='Distancia minkowski', required=False)
+    parser.add_argument('--distancia', type=int, choices=[1, 2, 3],
+                        help="opcional, indica la distancia entre clusters a utilizar\n"
+                             "1 para single link\n"
+                             "2 para complete link\n"
+                             "3 para mean link")
+    parser.add_argument('--mink', type=int, help='Distancia minkowski', required=False)
 
     args = parser.parse_args()
 
@@ -342,7 +347,6 @@ if __name__ == "__main__":
             print("distancia no valida, se va a utilizar la euclidea")
             input("pulsa para continuar... ")
 
-
     print(f"Numero de instancias: {len(datos)}")
 
     # Obtener clusters jerárquicos
@@ -353,5 +357,5 @@ if __name__ == "__main__":
     # Mostrar dendrograma y guardarlo
     dendrogram(Z)
     plt.gcf().set_size_inches(38.4, 21.6)
-    plt.savefig(args.salida+".png", dpi=500, bbox_inches='tight')
+    plt.savefig(args.salida + ".png", dpi=500, bbox_inches='tight')
     plt.show()
