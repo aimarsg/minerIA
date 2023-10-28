@@ -18,6 +18,8 @@ El paquete de software contiene diferentes ejecutables:
 *   evaluación.py
 *   limpiarDatos.py
 
+Además, también se incluye el conjunto de datos que hemos utilizado para llevar a cabo este proyecto. El conjunto es [Reddit C-SSRS Suicide Dataset](https://zenodo.org/records/2667859) y está en el fichero 500_Reddit_users_posts_labels.csv. 
+
 
 ## Uso
 
