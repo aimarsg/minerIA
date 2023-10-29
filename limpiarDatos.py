@@ -305,14 +305,26 @@ stemmer = PorterStemmer()
 
 def remove_stopwords(text):
     """custom function to remove the stopwords"""
+    """
+    text: textos de entrada
+    devuelve los textos de entrada sin stopwords
+    """
     return " ".join([word for word in str(text).split() if word not in STOPWORDS])
 
 
 def stem_words(text):
+    """
+     text: texto de entrada
+    devuelve el texto lematizado
+    """
     return " ".join([stemmer.stem(word) for word in text.split()])
 
 
 def convert_emoticons(text):
+    """
+    text: texto de entrada
+    devuelve el texto de entrada con lo emoticonos convertidos a texto en funcion del diccionario definido
+    """
     for emot in EMOTICONS:
         text = re.sub(u'('+emot+')', "_".join(EMOTICONS[emot].replace(",","").split()), text)
     return text
@@ -330,6 +342,10 @@ chat_words_list = set(chat_words_list)
 
 
 def chat_words_conversion(text):
+    """
+    text: texto de entrada
+     devuelve el texto de entrada con las abreviaturas  comunes  convertidos a texto en funcion del diccionario definido
+    """
     new_text = []
     for w in text.split():
         if w.upper() in chat_words_list:

@@ -4,7 +4,7 @@ from sklearn.decomposition import PCA
 import seaborn as sns
 import numpy as np
 from matplotlib import pyplot as plt
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, homogeneity_score
 from scipy.optimize import linear_sum_assignment
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, classification_report
 from mpl_toolkits.mplot3d import Axes3D
@@ -12,6 +12,11 @@ from mpl_toolkits.mplot3d import Axes3D
 num_instancias = 500
 
 def obtenerLabels(fichero):
+    """
+    :param fichero: un fichero que contiene el cluster, su centroide, y los indices de las instancias que pertenecen
+    a cada cluster
+    :return: un array que en la posicion i contiene el label correspondiente a la instancia i
+    """
     global num_instancias
     with open(fichero, 'r') as file:
         lines = file.readlines()
@@ -32,6 +37,10 @@ def obtenerLabels(fichero):
 
 
 def leer_etiquetas_reales(fich_etiquetas):
+    """
+    :param fich_etiquetas: un fichero que contiene las etiquetas reales de las instancias
+    :return: un array que en la posicion i contiene la etiqueta real de la instancia i
+    """
     etiquetas_reales = []
 
     # Leer el fichero de texto y guardar cada elemento en el array
@@ -53,6 +62,13 @@ def leer_etiquetas_reales(fich_etiquetas):
 
 
 def matriz_de_confusion(predicted_labels, train_y):
+    """
+    :param predicted_labels: un array que contiene en la posicion i el label de la instancia i obtenida al hace el clustering
+    :param train_y: un arrayy que contiene en la posicion i la etiqueta real de la instancia i
+    genera la matriz de confusion con los datos dados y reasigna los labels para que la matriz cobre mas sentido en la diagonal
+    imprime por pantalla las figuras de merito
+    :return: un array con la reasignacion de los labels
+    """
     to_string = lambda x: str(x)
     # Obtener matriz de confusión Class to clustering eval
     cm = confusion_matrix(np.vectorize(to_string)(predicted_labels), np.vectorize(to_string)(train_y))
@@ -90,10 +106,25 @@ def matriz_de_confusion(predicted_labels, train_y):
     print(f"Recall: \t {recall}")
     print(f"F1 Score: \t {f1}")
 
+    print("ÍNDICE EXTERNO:homogeneidad")
+
+    # La homogeneidad devuelve un valor entre 0 y 1
+    # que indica la relacion entre los clusters y las etiquetas reales
+
+    homogeneity = homogeneity_score(list(train_y), list(reassigned_labels))
+
+    print("Homogeneidad:", homogeneity)
+
     return reassigned_labels
 
 
 def dibujar_instancias(labels, etiquetas_reales, dim):
+    """
+    :param labels: un array que contiene en la posicion i el label de la instancia i obtenida al hace el clustering
+    :param etiquetas_reales: un arrayy que contiene en la posicion i la etiqueta real de la instancia i
+    :param dim: 2 o 3, para saber si se quiere visualizar en 2 o 3 dimensiones
+    genera un grafico de las instancias
+    """
     valores = list(instancias.values())
     instancias_v = []
 
