@@ -152,7 +152,6 @@ if __name__ == "__main__":
 
     labels = obtenerLabels(args.input_file)
 
-
     #print(labels)
     conteo = np.bincount(labels)
 

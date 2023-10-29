@@ -1,7 +1,6 @@
 import argparse
 import json
 import pickle
-import csv
 import numpy as np
 import pdb
 import pandas as pd
@@ -14,6 +13,11 @@ archivoSalida = "salida.csv"
 
 
 def asignar_labels(num_instancias, lista_clusters):
+    """
+    :param num_instancias:
+    :param lista_clusters:
+    :return:
+    """
     labels = np.arange(num_instancias)
     lista = list(lista_clusters.keys())
     while True and len(lista) > 0:
@@ -26,6 +30,14 @@ def asignar_labels(num_instancias, lista_clusters):
 
 
 def marcar_labels(cluster, labels, label, lista, lista_clusters):
+    """
+    :param cluster:
+    :param labels:
+    :param label:
+    :param lista:
+    :param lista_clusters:
+    :return:
+    """
     for elemento in cluster:
         idElemento = lista.index(elemento)
         lista.pop(idElemento)
@@ -36,6 +48,11 @@ def marcar_labels(cluster, labels, label, lista, lista_clusters):
 
 
 def distancia(instancias, distancia):
+    """
+    :param instancias:
+    :param distancia:
+    :return:
+    """
     # leer los clusters
     # clusters = {}
     num_inst = len(instancias)
@@ -70,6 +87,10 @@ def distancia(instancias, distancia):
 
 
 def numero_de_clusters(numero):
+    """
+    :param numero: clusters que quieres conseguir
+    :return: los centroides dado el número de clusters
+    """
     # Lógica para determinar el número de clusters utilizando los datos procesados
     with open(archivoSalida, 'r') as file:
         lines = file.readlines()
@@ -163,6 +184,9 @@ def numero_de_clusters(numero):
 
 
 def calcular_centroide_recursivo_indices(cluster, instancias, lista, instancias_fusionadas):
+    """
+    Función recursiva para obtener los índices de los clusters
+    """
     if cluster in lista.keys():  # Si es un índice de instancia
         a = lista[cluster]
         for v in a:
@@ -173,6 +197,9 @@ def calcular_centroide_recursivo_indices(cluster, instancias, lista, instancias_
 
 
 def calcular_centroide_recursivo_instancias(cluster, instancias, lista, instancias_fusionadas):
+    """
+    Función recursiva para obtener las instancias de los clusters
+    """
     if cluster in lista.keys():  # Si es un índice de instancia
         a = lista[cluster]
         for v in a:
@@ -183,6 +210,11 @@ def calcular_centroide_recursivo_instancias(cluster, instancias, lista, instanci
 
 
 def asignar_instancias_nuevas(numero, nuevas_instancias):
+    """
+    :param numero: número de clusters que quieres conseguir
+    :param nuevas_instancias: nuevas instancias que quieres asignar
+    :return:
+    """
     # Calcular los centroides de los clusters a partir de los datos procesados
     centroides = numero_de_clusters(numero)  # centroides es un dicionario
     # Inicializar un diccionario para mantener un registro de las instancias asignadas a cada cluster
@@ -197,10 +229,20 @@ def asignar_instancias_nuevas(numero, nuevas_instancias):
 
 
 def euclidean_distance(point1, point2):
+    """
+    :param point1: punto 1 para distancia euclidea
+    :param point2: punto 2 para distancia euclidea
+    :return: distancia euclidea
+    """
     return np.sqrt(np.sum((np.array(point1) - np.array(point2)) ** 2))
 
 
 def asignar_a_cluster(instancia, centroides):
+    """
+    :param instancia: instancia a asignar a cluster
+    :param centroides: centroides previamente calcular
+    :return:
+    """
     # Calcular la distancia entre la instancia y los centroides de los clusters
     distancias = []
     for key, centroide in centroides.items():
@@ -213,7 +255,11 @@ def asignar_a_cluster(instancia, centroides):
     return cluster_mas_cercano
 
 
-def mostrar_instancias_originales(cluster, instancia, vectores):
+def mostrar_instancias_originales(cluster):
+    """
+    :param cluster: cluster del cual quieres obtener las instancias
+    :return: tupla de vector, distancia
+    """
     with open(archivoSalida, 'r') as file:
         lines = file.readlines()
         fusion_data_dict = {}
@@ -236,26 +282,28 @@ def mostrar_instancias_originales(cluster, instancia, vectores):
     vector_dict = {}
     for v in cluster.keys():
         vectores = []
-        vectores = calcular_centroide_recursivo_instancias(v, instancias, lista, vectores)
+        vectores = calcular_centroide_recursivo_indices(v, instancias, lista, vectores)
         vector_dict[v] = vectores
 
     distancias_cercanas = []
 
     for key in cluster:
-        vectores_cluster_asociado = vector_dict.get(key, [])  # Obtener el cluster asociado a la clave en cluster
+        vectores_cluster_asociado = vector_dict.get(key, []) # Obtener el cluster asociado a la clave en cluster
+
         instancias_nuevas = cluster.get(key, [])  # Obtener la instancia nueva asociada a la clave en instancia
         for instancia_nueva in instancias_nuevas:
             # Calcular las distancias entre el valor de cluster y los vectores del cluster
-            distancias = [(vector, euclidean_distance(instancia_nueva, vector)) for vector in vectores_cluster_asociado]
+            distancias = [(vector, euclidean_distance(instancia_nueva, instancias[vector])) for vector in vectores_cluster_asociado]
 
             # Ordenar las distancias de menor a mayor
             distancias_ordenadas = sorted(distancias, key=lambda x: x[1])
 
             # Obtener los dos vectores más cercanos
-            dos_vectores_cercanos = [distancia[0] for distancia in distancias_ordenadas[:2]]
+            dos_vectores_cercanos = [(distancia[0], distancia[1]) for distancia in distancias_ordenadas[:2]]
 
             # Guardar los dos vectores más cercanos en la lista principal
             distancias_cercanas.extend(dos_vectores_cercanos)
+            # Mostrar las distancias más cercanas
 
     return distancias_cercanas
 
@@ -289,26 +337,31 @@ if __name__ == "__main__":
         numero_de_clusters(args.num)
 
     elif args.opcion == 3 and args.nuevas_instancias is not None and args.num is not None:
+        texto_original = pd.read_csv(args.nuevas_instancias)
+        texto_original = texto_original['Post']
         limpiar.main(args.nuevas_instancias, "new_vector_result2.csv")
         _, documentos = bow.read_csv("new_vector_result2.csv")
         documentos = bow.preprocess_text(documentos)
         model = Doc2Vec.load("d2v.model")
         nuevas_instancias = bow.add_new_instance(model, documentos)
-        instancias_reducida = clustering.reducir_dimensionalidad_pca(nuevas_instancias, instancias[0][0])
-        asignaciones = asignar_instancias_nuevas(args.num, instancias_reducida)
-        print(asignaciones)
+        nuevas_instancias = [nuevas_instancias[0].tolist()]
+
+        instancias_origales = clustering.leer_datos2("doc2vec_results2.csv")
+        instancias_origales.append(nuevas_instancias[0])
+        num_instancias = len(instancias)
+        instacias_con_PCA = clustering.reducir_dimensionalidad_pca(instancias_origales, len(instancias[0][0]))
+        ultimos_valores = instacias_con_PCA[num_instancias:]
+        asignaciones = asignar_instancias_nuevas(args.num, ultimos_valores)
         # Imprimir los resultados de asignaciones
         # for cluster, instancias_asignadas in asignaciones.items():
         #   print(f"Cluster {cluster}:")
         #  for i, instancia in enumerate(instancias_asignadas, 1):
         #     print(instancia)
-
-        instancias_mas_cercanas = mostrar_instancias_originales(asignaciones, nuevas_instancias, instancias)
-
-        for instancia in instancias_mas_cercanas:
-            original_vector = instancia[0]
-            original_vector = np.array(original_vector)
-
-            df_ml_dataset = pd.read_csv("500_Reddit_users_posts_labels.csv")
-
-            found_text = bow.find_text_by_vector(model, original_vector, df_ml_dataset)
+        instancias_mas_cercanas = mostrar_instancias_originales(asignaciones)
+        with open("Instancias_cercanas_originales.txt", 'w') as archivo:
+            archivo.write(f"Instancia original: {texto_original[0]}\n")
+            for indice, distancia in instancias_mas_cercanas:
+                df_ml_dataset = pd.read_csv("500_Reddit_users_posts_labels.csv")
+                instancia_original = df_ml_dataset.iloc[indice]['Post']
+                archivo.write(f"Instancia cercana: {instancia_original}\n")
+                archivo.write(f"Distancia: {distancia}\n")

@@ -8,6 +8,11 @@ from gensim.matutils import sparse2full
 import limpiarDatos as limpiar
 
 def coerce_to_unicode(x):
+    """
+    x: el valor a convertir en unicode
+    Convierte los valores a unicode
+    Devuelve el valor convertido
+    """
     if sys.version_info < (3, 0):
         if isinstance(x, str):
             # He cambiado unicode por str
@@ -18,6 +23,10 @@ def coerce_to_unicode(x):
         return str(x)
 
 def read_csv(file_path):
+    """
+    :param file_path: El path del csv a leer
+    :return: ml_dataset como el dataset original y documentos con la columna Text
+    """
     ml_dataset = pd.read_csv(file_path, header=None, names=['User', 'Text', 'Label'])
     ml_dataset = ml_dataset[['User', 'Text', 'Label']]
 
@@ -32,6 +41,10 @@ def read_csv(file_path):
 
 
 def preprocess_text(documents):
+    """
+    :param documents: los documentos a preprocesar
+    :return: los documentos preprocesados
+    """
     tokenizer = RegexpTokenizer(r'\w+')
     lemmatizer = WordNetLemmatizer()
 
@@ -50,6 +63,10 @@ def preprocess_text(documents):
     return processed_documents
 
 def train_doc2vec_model(documents):
+    """
+    :param documents: los documentos con los que entrenamos el Doc2Vec
+    :return: el modelo y los documentos tokenizados
+    """
     # Prepare tagged data
     tagged_data = [TaggedDocument(words=doc, tags=[str(i)]) for i, doc in enumerate(documents)]
 
@@ -68,12 +85,17 @@ def train_doc2vec_model(documents):
 
 
 def add_new_instance(model, new_instance):
+    """
+    :param model: el modelo Doc2Vec previamente entrenado
+    :param new_instance: la nueva instancia la cual vamos a inferir
+    :return: el vector resultante de inferir la instancia
+    """
     # Inicializar una lista para almacenar los vectores inferidos
     inferred_vectors = []
     # Iterar sobre cada valor en la lista new_instance
     for instance_value in new_instance:
         # Obtener el vector inferido para la instancia actual
-        inferred_vector = model.infer_vector(instance_value)
+        inferred_vector = model.infer_vector(instance_value, epochs=10)
 
         # Agregar el vector inferido a la lista
         inferred_vectors.append(inferred_vector)
@@ -81,6 +103,12 @@ def add_new_instance(model, new_instance):
     return inferred_vectors
 
 def save_doc2vec_results(model, tagged_data, ml_dataset):
+    """
+    :param model: el modelo Doc2Vec previamente entrenado
+    :param tagged_data: los documentos tokenizados
+    :param ml_dataset: el dataset original
+    Guarda los vectores en un csv
+    """
     # Obtener vectores para cada documento
     vectors = [model[i] for i in range(len(tagged_data))]
     print(len(vectors))
@@ -94,12 +122,20 @@ def save_doc2vec_results(model, tagged_data, ml_dataset):
     # Guardar en un archivo CSV
     df_doc2vec.to_csv('doc2vec_results2.csv', index=False)
 
+
 def bow_vectorize(document, dictionary):
     bow_vector = dictionary.doc2bow(document)
     dense_vector = sparse2full(bow_vector, len(dictionary))
     return dense_vector
 
+
 def find_text_by_vector(model, vector, ml_dataset):
+    """
+    :param model: el modelo Doc2Vec previamente entrenado
+    :param vector: el vector el cual queremos encontrar sus similares
+    :param ml_dataset: el dataset con las instancias originales
+    :return: las instancias más similares al vector dado
+    """
     # Calcular similitudes de coseno entre el vector dado y los vectores del modelo
     similarities = model.docvecs.most_similar([vector])
     print(similarities)
@@ -108,7 +144,8 @@ def find_text_by_vector(model, vector, ml_dataset):
     most_similar_index = int(similarities[0][0])
     # Obtener el texto original asociado al índice
     most_similar_text = ml_dataset.iloc[most_similar_index]['Post']
-    print(most_similar_text)
+
+    return most_similar_text
 
 """
 #BOW

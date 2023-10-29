@@ -1,5 +1,6 @@
 import argparse
 import copy
+import pdb
 import pickle
 import sys
 import pandas as pd
@@ -8,7 +9,7 @@ from scipy.cluster.hierarchy import dendrogram
 from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 from sklearn.metrics import silhouette_score
-import pdb
+from scipy.cluster.hierarchy import linkage
 
 # VARIABLES GLOBALES #
 distancia_entre_instancias = {}
@@ -28,9 +29,21 @@ def leer_datos(input_file):
     df = df.drop('User', axis=1)
     df['Label'].to_csv("real_labels.txt", index=False, header=False)
     df = df.drop('Label', axis=1)
-    # df = df.head(50)
+    #df = df.head(50)
     with open(sys.argv[2], 'w') as archivo:
         archivo.write(f"numero de instancias: {len(df.index)} \n")
+    return df.values.tolist()
+
+def leer_datos2(input_file):
+    """
+    input file: dataset en formato csv que contiene las columnas user, label y post
+    devuelte: una lista de los posts
+    """
+    df = pd.read_csv(input_file, sep=",")
+    df = df.drop('User', axis=1)
+    df['Label'].to_csv("real_labels.txt", index=False, header=False)
+    df = df.drop('Label', axis=1)
+    #df = df.head(50)
     return df.values.tolist()
 
 
@@ -294,22 +307,25 @@ def cluster_jerarquico(data):
             for key, values in lista_cluster_fus.items():
                 instancias_fusionadas = []
                 for v in values:
-                    centroide_fusionado = calcular_centroide_recursivo(v, lista_clusters, lista_cluster_fus,
+                    lista_instancias = conseguir_instancias_fusionadas(v, lista_clusters, lista_cluster_fus,
                                                                        instancias_fusionadas)
 
             # añadir la informacion para el dendograma
             Z.append(
-                [clusters_cercanos[0], clusters_cercanos[1], distancia_minima, len(centroide_fusionado)])
+                [clusters_cercanos[0], clusters_cercanos[1], distancia_minima, len(lista_instancias)])
 
             i += 1
     return lista_clusters, np.array(Z)
 
 
-def calcular_centroide_recursivo(cluster, instancias, lista, instancias_fusionadas):
+def conseguir_instancias_fusionadas(cluster, instancias, lista, instancias_fusionadas):
+    """
+    Método recursivo para devolver las instancias de los clusters
+    """
     if cluster in lista.keys():  # Si es un índice de instancia
         a = lista[cluster]
         for v in a:
-            calcular_centroide_recursivo(v, instancias, lista, instancias_fusionadas)
+            conseguir_instancias_fusionadas(v, instancias, lista, instancias_fusionadas)
     else:
         instancias_fusionadas.append(instancias[cluster][0])
     return instancias_fusionadas
@@ -353,9 +369,9 @@ if __name__ == "__main__":
     clusters, Z = cluster_jerarquico(datos)
 
     print(clusters)
-
+    #Z = linkage(datos)
     # Mostrar dendrograma y guardarlo
     dendrogram(Z)
-    plt.gcf().set_size_inches(38.4, 21.6)
-    plt.savefig(args.salida + ".png", dpi=500, bbox_inches='tight')
+    #plt.gcf().set_size_inches(38.4, 21.6)
+    #plt.savefig(args.salida + ".png", dpi=500, bbox_inches='tight')
     plt.show()
