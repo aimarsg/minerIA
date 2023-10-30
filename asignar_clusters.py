@@ -80,12 +80,14 @@ def distancia(instancias, distancia):
     print("El fichero se ha generado correctamente.")
 
 
-def numero_de_clusters(numero):
+def numero_de_clusters(numero, instancias):
     """
     :param numero: clusters que quieres conseguir
     :return: los centroides dado el número de clusters
     """
     # Lógica para determinar el número de clusters utilizando los datos procesados
+    num_inst = len(instancias)
+    i = 0
     with open(archivoSalida, 'r') as file:
         lines = file.readlines()
         fusion_data_dict = {}
@@ -102,6 +104,11 @@ def numero_de_clusters(numero):
                     key = int(parts[0])
                     values = [int(x.strip(' []')) for x in parts[1].split(",")]
                     fusion_data_dict[key] = values
+                    if i<=(num_inst-numero-1):
+                        instancias[key] = values
+                        i+=1
+    labels, num_clusters = asignar_labels(num_inst, instancias)
+
 
     lista = fusion_data_dict.copy()
     centroides = {}
@@ -116,29 +123,8 @@ def numero_de_clusters(numero):
             centroide = np.mean(centroide_fusionado, axis=0)
             centroides[key] = centroide
 
-    i = len(fusion_data_dict) - 1
-    imprimir = []
-    while True:
-        keys = list(fusion_data_dict.keys())
-        current_key = keys[i]
-        if numero == 1:
-            imprimir.append(current_key)
-        else:
-            min_value = min(fusion_data_dict[current_key])
-            max_value = max(fusion_data_dict[current_key])
-            imprimir.append(min_value)
-            imprimir.append(max_value)
-            while max_value in fusion_data_dict and i > len(fusion_data_dict) - numero + 1:
-                current_key = max_value
-                if current_key in imprimir and current_key in fusion_data_dict:
-                    imprimir.remove(current_key)
-                min_value = min(fusion_data_dict[current_key])
-                max_value = max(fusion_data_dict[current_key])
-                imprimir.append(min_value)
-                imprimir.append(max_value)
-                i -= 1
-        break
 
+    imprimir = num_clusters
     diccionario = {}
     for key in imprimir:
         diccionario[key] = centroides[key]
@@ -160,6 +146,7 @@ def numero_de_clusters(numero):
                 instancias_file.write(
                     f"Cluster: {key}; Centroide: {centroide_dict_str}; Instancias: {centroide_fusionado_str}; Vectores: {vectores_str}\n")
 
+
         for key, values in diccionario.items():
             if key not in fusion_data_dict.keys():
                 instancias_fusionadas = []
@@ -173,6 +160,7 @@ def numero_de_clusters(numero):
                 centroide_dict_str = str(diccionario[key][0]).replace('\n', '')
                 instancias_file.write(
                     f"Cluster: {key}; Centroide: {centroide_dict_str}; Instancias: {centroide_fusionado_str}; Vectores: {vectores_str}\n")
+
     print("guardado en instancias_cluster2")
     return diccionario
 
@@ -203,14 +191,14 @@ def calcular_centroide_recursivo_instancias(cluster, instancias, lista, instanci
     return instancias_fusionadas
 
 
-def asignar_instancias_nuevas(numero, nuevas_instancias):
+def asignar_instancias_nuevas(numero, nuevas_instancias, instancias):
     """
     :param numero: número de clusters que quieres conseguir
     :param nuevas_instancias: nuevas instancias que quieres asignar
     :return: las asignaciones de las instancias nuevas
     """
     # Calcular los centroides de los clusters a partir de los datos procesados
-    centroides = numero_de_clusters(numero)  # centroides es un dicionario
+    centroides = numero_de_clusters(numero, instancias)  # centroides es un dicionario
     # Inicializar un diccionario para mantener un registro de las instancias asignadas a cada cluster
     asignaciones = {cluster: [] for cluster in centroides}
     # Recorrer las nuevas instancias y asignarlas al cluster más cercano
@@ -328,7 +316,7 @@ if __name__ == "__main__":
             distancia(instancias, args.distancia)
 
     elif args.opcion == 2 and args.num is not None:
-        numero_de_clusters(args.num)
+        numero_de_clusters(args.num, instancias)
 
     elif args.opcion == 3 and args.nuevas_instancias is not None and args.num is not None:
         texto_original = pd.read_csv(args.nuevas_instancias)
@@ -345,7 +333,7 @@ if __name__ == "__main__":
         num_instancias = len(instancias)
         instacias_con_PCA = clustering.reducir_dimensionalidad_pca(instancias_origales, len(instancias[0][0]))
         ultimos_valores = instacias_con_PCA[num_instancias:]
-        asignaciones = asignar_instancias_nuevas(args.num, ultimos_valores)
+        asignaciones = asignar_instancias_nuevas(args.num, ultimos_valores, instancias)
         # Imprimir los resultados de asignaciones
         # for cluster, instancias_asignadas in asignaciones.items():
         #   print(f"Cluster {cluster}:")
