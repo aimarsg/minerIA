@@ -329,6 +329,52 @@ def conseguir_instancias_fusionadas(cluster, instancias, lista, instancias_fusio
     return instancias_fusionadas
 
 
+def plot_silhouette_scores_from_csv(archivoSalida):
+    """
+    :param archivoSalida: nombre del fichero csv que contiene toda la información acerca del output
+    dibuja un grafico que muetra el valor de silhouette para cada numero de cluster
+    """
+    # Lista para almacenar los datos
+    iteraciones = []
+    silhouette_scores = []
+    # Leer el archivo CSV
+    with open(archivoSalida, 'r') as file:
+        lines = file.readlines()
+
+    for line in lines[1:]:
+        columns = line.strip().split(',')
+        if len(columns) >= 5:  # Verificar que haya al menos cinco elementos en la lista
+            first = columns[0].strip()
+            Silhouette = columns[4].strip()
+
+            # Obtener el número de iteración y el Silhouette Score
+            iteracion = int(first.split(': ')[1])
+            if len(Silhouette) >= 1:
+                silhouette_score = float(Silhouette.split(': ')[1])
+
+                # Agregar a las listas
+                iteraciones.append(iteracion)
+                silhouette_scores.append(silhouette_score)
+
+    # Crear el gráfico de línea
+    iteraciones = list(reversed(iteraciones))
+    plt.plot(iteraciones, silhouette_scores, marker='o')
+
+    # Añadir etiquetas y título
+    plt.xlabel("Número de Clusters")
+    plt.ylabel('Silhouette Score')
+    plt.title('Evolución de Silhouette')
+
+    # Encontrar la iteración con el máximo Silhouette Score
+    max_silhouette_iteration = iteraciones[silhouette_scores.index(max(silhouette_scores))]
+
+    # Imprimir el valor correspondiente
+    print(f"El máximo Silhouette Score ({max(silhouette_scores)}) ocurrió con {max_silhouette_iteration} Clusters")
+
+    # Mostrar el gráfico
+    plt.show()
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Clustering jerarquico")
     parser.add_argument('fich_entrada', type=str, help="Ruta al fichero de entrada")
@@ -369,9 +415,10 @@ if __name__ == "__main__":
     #Z = linkage(datos)
     # Mostrar dendrograma y guardarlo
     dendrogram(Z)
-    #plt.gcf().set_size_inches(38.4, 21.6)
-    #plt.savefig(args.salida + ".png", dpi=500, bbox_inches='tight')
+    plt.gcf().set_size_inches(38.4, 21.6)
+    plt.savefig(args.salida + ".png", dpi=500, bbox_inches='tight')
     plt.show()
     end_time = time.time()
     execution_time = end_time - start_time
     print(f"Tiempo de ejecución: {execution_time} segundos")
+    plot_silhouette_scores_from_csv(args.salida)
