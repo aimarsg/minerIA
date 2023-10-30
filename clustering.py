@@ -1,6 +1,7 @@
 import argparse
 import copy
 import pdb
+import time
 import pickle
 import sys
 import pandas as pd
@@ -87,7 +88,6 @@ def fusionar_clusters(clusters_cercanos):
     """
     global lista_clusters
     i1, i2 = clusters_cercanos
-    print(f"fusionando clusters... {i1} y {i2}")
     clusters_fusionados = [i1, i2]
     id_nuevo_cluster = len(lista_clusters)
     lista_clusters[id_nuevo_cluster] = clusters_fusionados
@@ -191,7 +191,6 @@ def actualizar_distancias(clusters_cercanos, id_nuevo_cluster):
     global distancia_entre_clusters
 
     i, j = clusters_cercanos
-    print(f"actualizando distancias...{[i, j]} \n nuevo cluster: {id_nuevo_cluster}")
 
     if (i, j) in distancia_entre_clusters:
         distancia_entre_clusters.pop((i, j))
@@ -286,7 +285,6 @@ def cluster_jerarquico(data):
     lista_cluster_fus = {}
     with open(sys.argv[2], 'a') as archivo:
         while j > i:
-            print("-------------------ITERACION " + str(i) + "-------------------------")
             # obtener clusters con la distancia minima
             clusters_cercanos, distancia_minima = min(distancia_entre_clusters.items(), key=lambda x: x[1])
 
@@ -342,7 +340,7 @@ if __name__ == "__main__":
                              "2 para complete link\n"
                              "3 para mean link")
     parser.add_argument('--mink', type=int, help='Distancia minkowski', required=False)
-
+    start_time = time.time()
     args = parser.parse_args()
 
     fich_salida = args.salida
@@ -368,10 +366,12 @@ if __name__ == "__main__":
     # Obtener clusters jerárquicos
     clusters, Z = cluster_jerarquico(datos)
 
-    print(clusters)
     #Z = linkage(datos)
     # Mostrar dendrograma y guardarlo
     dendrogram(Z)
     #plt.gcf().set_size_inches(38.4, 21.6)
     #plt.savefig(args.salida + ".png", dpi=500, bbox_inches='tight')
     plt.show()
+    end_time = time.time()
+    execution_time = end_time - start_time
+    print(f"Tiempo de ejecución: {execution_time} segundos")

@@ -14,9 +14,9 @@ archivoSalida = "salida.csv"
 
 def asignar_labels(num_instancias, lista_clusters):
     """
-    :param num_instancias:
-    :param lista_clusters:
-    :return:
+    num_instancias: el numero de instancias inicial
+    calcula la etiqueta correspondiente a cada instancia, yendo hacia abajo en el arbol
+    devuelve: una lista con la etiqueta correspondiente a cada instancia y el numero de etiquetas distintas
     """
     labels = np.arange(num_instancias)
     lista = list(lista_clusters.keys())
@@ -31,12 +31,7 @@ def asignar_labels(num_instancias, lista_clusters):
 
 def marcar_labels(cluster, labels, label, lista, lista_clusters):
     """
-    :param cluster:
-    :param labels:
-    :param label:
-    :param lista:
-    :param lista_clusters:
-    :return:
+    metodo recursivo para profundizar en el arbol y obtener la etiqueta de cada instancia
     """
     for elemento in cluster:
         idElemento = lista.index(elemento)
@@ -49,9 +44,8 @@ def marcar_labels(cluster, labels, label, lista, lista_clusters):
 
 def distancia(instancias, distancia):
     """
-    :param instancias:
-    :param distancia:
-    :return:
+    :param instancias: las instancias originales
+    :param distancia: dado la distcnia sacamos el número de clusters
     """
     # leer los clusters
     # clusters = {}
@@ -213,7 +207,7 @@ def asignar_instancias_nuevas(numero, nuevas_instancias):
     """
     :param numero: número de clusters que quieres conseguir
     :param nuevas_instancias: nuevas instancias que quieres asignar
-    :return:
+    :return: las asignaciones de las instancias nuevas
     """
     # Calcular los centroides de los clusters a partir de los datos procesados
     centroides = numero_de_clusters(numero)  # centroides es un dicionario
@@ -358,7 +352,7 @@ if __name__ == "__main__":
         #  for i, instancia in enumerate(instancias_asignadas, 1):
         #     print(instancia)
         instancias_mas_cercanas = mostrar_instancias_originales(asignaciones)
-        with open("Instancias_cercanas_originales.txt", 'w') as archivo:
+        with open("Instancias_cercanas_originales2.txt", 'w') as archivo:
             archivo.write(f"Instancia original: {texto_original[0]}\n")
             for indice, distancia in instancias_mas_cercanas:
                 df_ml_dataset = pd.read_csv("500_Reddit_users_posts_labels.csv")
